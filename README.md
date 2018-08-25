@@ -4,6 +4,7 @@ Python 3.6.0 implementation of "Comparative Studies of Detecting Abusive Languag
 
 ## Requirements
 Install Python packages by running the script.
+
 `pip3 install -r requirements.txt`
 
 ## Data Preprocessing
