@@ -1,4 +1,5 @@
 import argparse
+import re
 
 def str2bool(v):
 	if v == 'True':
@@ -23,3 +24,15 @@ def str2embedding(v):
 		return 'yes'
 	else:
 		raise argparse.ArgumentTypeError("'yes' or 'no' expected.")
+
+def str2ngrams(v):
+	ngram_list = v.split(',')
+	if len(v) == 2:
+		b_i = int(re.sub("\D", "", ngram_list[0]))
+		e_i = int(re.sub("\D", "", ngram_list[1]))
+		if e_i < b_i:
+			raise argparse.ArgumentTypeError("Invalid range.")
+		else:
+			return (b_i, e_i)
+	else:
+		raise argparse.ArgumentTypeError("n-gram range is expected. e.g. '1,3'")

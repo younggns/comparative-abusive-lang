@@ -154,7 +154,7 @@ def crawlTweet():
 ################################################################################
 ############################## Text Preprocessing ##############################
 ################################################################################
-def text_preprocess(text, tknzr, feature_level):
+def text_preprocess(text, tknzr):
 	FLAGS = re.MULTILINE | re.DOTALL
 	# Different regex parts for smiley faces
 	eyes = r"[8:=;]"
@@ -177,14 +177,10 @@ def text_preprocess(text, tknzr, feature_level):
 	text = re_sub(r"\b(\S*?)(.)\2{2,}\b", r"\1\2 <elong>")
 	text = re_sub(r"#\S+", lambda hashtag: " ".join(segment(hashtag.group()[1:]))) # segment hastags
 
-	if feature_level == 'word':
-		tokens = tknzr.tokenize(text.lower())
-		return "\t".join(tokens)
-	else:
-		text = text.lower()
-		return text
+	tokens = tknzr.tokenize(text.lower())
+	return " ".join(tokens)
 
-def concat_data(feature_level):
+def concat_data():
 	###################################
 	########## Lookup Tables ##########
 	###################################
@@ -208,8 +204,8 @@ def concat_data(feature_level):
 	tknzr = TweetTokenizer(reduce_len=True, preserve_case=False, strip_handles=False)
 	for _id in id2entities:
 		if id2entities[_id][0] in label_dict.keys():
-			text_data.append(text_preprocess(id2entities[_id][1], tknzr, feature_level))
-			context_data.append(text_preprocess(id2entities[_id][2], tknzr, feature_level))
+			text_data.append(text_preprocess(id2entities[_id][1], tknzr))
+			context_data.append(text_preprocess(id2entities[_id][2], tknzr))
 
 			label_data.append(label_lookup[ label_dict[id2entities[_id][0]] ])
 
@@ -279,7 +275,7 @@ if __name__ == "__main__":
 	if args["crawl_tweets"] == True:
 		crawlTweet()
 
-	_text, _ctxt, _label = concat_data(args["feature_level"])
+	_text, _ctxt, _label = concat_data()
 	_text_split, _ctxt_split, _label_split = kfold_splits(_text, _ctxt, _label, 10)
 
 	path = os.path.dirname(os.path.abspath(__file__)) + "/data/preprocessed/" + args["feature_level"]
