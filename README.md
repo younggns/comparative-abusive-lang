@@ -12,8 +12,25 @@ pip3 install -r requirements.txt
 
 ## Data Preprocessing
 Data preprocessing consists of three steps:
-1. Download the data. The dataset's each row is consisted of a tweet ID and its annotation. 
+1. Download the source data (*Hate and Abusive Speech on Twitter*). The dataset's each row is consisted of a tweet ID and its annotation. 
 2. Crawl tweets based on tweet ID. Note that **you might not be able to crawl full data of tweets with tweet IDs**, mainly because the tweet is deleted or the user account has been suspended.
-3. Preprocess raw text data. This step includes text preprocessing (e.g. handling hashtags and URLs), generating vocabulary dictionaries (e.g. word to index), and converting each tweet message into numpy object with its feature representations.
+3. Preprocess raw text data---basic text preprocessing (e.g. handling hashtags and URLs) and splitting the data.
 
+Run the following script with specified parameters:
 
+```
+python3 data_preprocess.py
+		--download_source (Download the source file from the Github repository if True.; Type: boolean; default: True)
+		--crawl_tweets (Crawl tweets with tweet IDs. This procedure also creates a Python pickle file of the data; Type: boolean; default: True)
+		--feature_level (Feature representation level. Either 'word' or 'char'; Type: char; default: 'word')
+```
+
+## Training
+### Traditional Machine Learning Models
+In order to report the baselines of feature engineering based machine learning models, we experimented with Naïve Bayes, Logistic Regression, Support Vector Machine, Random Forests, and Gradient Boosted Trees. All models were implemented using Scikit-learn packages.
+
+### Neural Network Models
+
+this step includes generating vocabulary dictionaries (e.g. word to index), and converting each tweet message into numpy object with its feature representations for neural network models.
+
+--use_pretrained_embedding ('yes' if you want to use GloVe embedding as in this paper. 'no' will use random word embeddings; default: 'yes')

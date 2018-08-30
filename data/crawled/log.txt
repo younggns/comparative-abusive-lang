@@ -1,0 +1,5 @@
+Total input tweets: 100
+Suspended: 18
+Deleted: 21
+Unauthorized to access: 5
+Non-existing: 4
