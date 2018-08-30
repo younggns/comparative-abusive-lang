@@ -13,8 +13,8 @@ pip3 install -r requirements.txt
 ## Data Preprocessing
 Data preprocessing consists of three steps:
 1. Download the source data (*Hate and Abusive Speech on Twitter*). The dataset's each row is consisted of a tweet ID and its annotation. 
-2. Crawl tweets based on tweet ID. Note that **you might not be able to crawl full data of tweets with tweet IDs**, mainly because the tweet is deleted or the user account has been suspended.
-3. Preprocess raw text data--basic text preprocessing (e.g. handling hashtags and URLs) and splitting the data.
+2. Crawl tweets based on tweet ID. Note that **you might not be able to crawl full data of tweets with tweet IDs**, mainly because the tweet is deleted or the user account has been suspended. Please fill in your Twitter app credentials from line 57 in the [data_preprocess.py](./data_preprocess.py) script.
+3. Preprocess raw text data---basic text preprocessing (e.g. handling hashtags and URLs) and splitting the data into 10 randomly divided folds.
 
 Run the following script with specified parameters:
 
@@ -28,6 +28,8 @@ python3 data_preprocess.py
 ## Training
 ### Traditional Machine Learning Models
 In order to report the baselines of feature engineering based machine learning models, we experimented with Naïve Bayes, Logistic Regression, Support Vector Machine, Random Forests, and Gradient Boosted Trees. All models were implemented using Scikit-learn packages.
+
+Go to the [model](./model) directory and run the following script with specified parameters.
 
 ### Neural Network Models
 

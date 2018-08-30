@@ -13,8 +13,6 @@ from nltk.tokenize import TweetTokenizer
 from wordsegment import segment, load
 # K-fold splits
 from sklearn.model_selection import train_test_split, KFold
-# For generating vocabs
-from collections import Counter
 
 ##########################################################################
 ############################## Crawl Tweets ##############################
@@ -56,10 +54,10 @@ def getTweetType(status):
 
 def crawlTweet():
 	######### Modify this part with your Twitter App credentials #########
-	# consumer_key = 'TWITTER_APP_CONSUMER_KEY'
-	# consumer_secret = 'TWITTER_APP_CONSUMER_SECRET'
-	# access_token = 'TWITTER_APP_ACCESS_TOKEN'
-	# access_token_secret = 'TWITTER_APP_ACCESS_TOKEN_SECRET'
+	consumer_key = ''
+	consumer_secret = ''
+	access_token = ''
+	access_token_secret = ''
 	######################################################################
 
 	auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
