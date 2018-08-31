@@ -1,7 +1,7 @@
 *Still working with code distribution. Please contact me (younggnse@gmail.com) if you have any questions.*
 # Comparative Studies of Detecting Abusive Language on Twitter
 
-Python 3.6.0 implementation of "Comparative Studies of Detecting Abusive Language on Twitter" accepted in EMNLP 2018 Workshop on Abusive Language Online (ALW2).
+Python 3.6.0 implementation of ["Comparative Studies of Detecting Abusive Language on Twitter"](http://arxiv.org/abs/1808.10245) accepted in EMNLP 2018 Workshop on Abusive Language Online (ALW2).
 This paper conducts a comparative study of various learning models on [Hate and Abusive Speech on Twitter](https://github.com/ENCASEH2020/hatespeech-twitter) dataset, which has great potential in training deep models with its significant size.
 
 ## Requirements
@@ -41,8 +41,14 @@ python3 train_ml.py
 	--max_features (Maximum length of features that you want to use. Features are selected based on TF-IDF normalized values; Type: int)
 ```
 
-### Neural Network Models
+## Reference
+Please refer the following paper in order to use the code as part of any publications.
 
-this step includes generating vocabulary dictionaries (e.g. word to index), and converting each tweet message into numpy object with its feature representations for neural network models.
-
---use_pretrained_embedding ('yes' if you want to use GloVe embedding as in this paper. 'no' will use random word embeddings; default: 'yes')
+```
+@article{lee2018comparative,
+	title={Comparative Studies of Detecting Abusive Language on Twitter},
+	author={Lee, Younghun and Yoon, Seunghyun and Jung, Kyomin},
+	journal={arXiv preprint arXiv:1808.10245},
+	year={2018}
+}
+```
