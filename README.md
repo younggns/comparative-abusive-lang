@@ -21,9 +21,9 @@ Run the following script with specified parameters:
 
 ```
 python3 data_preprocess.py
-	--download_source (Download the source file from the Github repository if True; Type: boolean; default: True)
-	--crawl_tweets (Crawl tweets with tweet IDs. This procedure also creates a Python pickle file of the data; Type: boolean; default: True)
-	--feature_level (Feature representation level. Either 'word' or 'char'; Type: char; default: 'word')
+	--download_source (Whether or not download the source csv file; default: True)
+	--crawl_tweets (Whether or not crawl tweets; default: True)
+	--feature_level (Feature representation level. 'word' or 'char'; default: 'word')
 ```
 
 ## Training
@@ -36,10 +36,16 @@ Go to the [./model](./model) directory and run the following script with specifi
 
 ```
 python3 train_ml.py
-	--feature_level (Feature representation level. Either 'word' or 'char'; Type: char; default: 'word')
+	--feature_level (Feature representation level. word' or 'char'; default: 'word')
 	--ngram_range (Range of n-grams for training. E.g. '1,3' for using 1-gram to 3-grams; Type: char)
 	--max_features (Maximum length of features that you want to use. Features are selected based on TF-IDF normalized values; Type: int)
+	--clf (Type of classifier; Type: char)
 ```
+**Parameter Description**
++ ngram_range: Enter a comma-separated string describing the ngram range. For example, '1,3' means that you will use unigram, bigram, and trigram features. In this paper, we used '1,3' for word-level, and '3,8' for character-level representations.
++ max_features: Due to the size of the dataset, you might want to only consider the most significant features (largest feature values). You will use feature values that are normalized with TF-IDF values. We used 14,000 for word-level, and 53,000 for character-level features. Especially for GBT, we reduced feature length even further to 1,200 and 2,300.
++ clf: We implemented 5 different feature engineering based machine learning classifiers.
+	+ 'NB': Naïve Bayes, 'LR': Logistic Regression, 'SVM': Support Vector Machine, 'RF': Random Forests, 'GBT': Gradient Boosted Trees
 
 ## Reference
 Please refer the following paper in order to use the code as part of any publications.
