@@ -17,14 +17,6 @@ def str2feature(v):
 	else:
 		raise argparse.ArgumentTypeError("'word' or 'char' expected.")
 
-def str2embedding(v):
-	if v in ['no', 'No', 'NO']:
-		return 'no'
-	elif v in ['yes', 'Yes', 'YES']:
-		return 'yes'
-	else:
-		raise argparse.ArgumentTypeError("'yes' or 'no' expected.")
-
 def str2ngrams(v):
 	ngram_list = v.split(',')
 	if len(ngram_list) == 2:
@@ -48,6 +40,10 @@ def str2clfs(v):
 		return 'RF'
 	elif v in ["gbt", "GBT", "Gbt"]:
 		return 'GBT'
+	elif v in ["cnn", "CNN", "Cnn"]:
+		return "CNN"
+	elif v in ["rnn", "RNN", "Rnn"]:
+		return "RNN"
 	else:
 		raise argparse.ArgumentTypeError("Invalid classifier name.")
 

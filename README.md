@@ -26,34 +26,38 @@ python3 data_preprocess.py
 	--feature_level (Feature representation level. 'word' or 'char'; default: 'word')
 ```
 
-## Training
+## Training & Evaluation
 ### Traditional Machine Learning Models
-In order to report the baselines of feature engineering based machine learning models, we experimented with Naïve Bayes, Logistic Regression, Support Vector Machine, Random Forests, and Gradient Boosted Trees. All models were implemented using Scikit-learn packages.
+In order to report the baselines of feature engineering based machine learning models, we experimented with Naïve Bayes, Logistic Regression, Support Vector Machine, Random Forests, and Gradient Boosted Trees. We tune n-gram ranges and maximum length of features as hyperparameters. Please modify the code [./model/train_ml.py](./model/train_ml.py) in order to try different settings (e.g. loss function, learning rate, etc.)
 
-In this paper, we tune n-gram ranges and maximum length of features as hyperparameters. Please modify the code [./model/train_ml.py](./model/train_ml.py) in order to try different settings (e.g. loss function, learning rate, etc.)
+**Parameter Description**
++ feature_level: word / char
++ clf: We implemented 5 different feature engineering based machine learning classifiers. Use the following representations---'NB': Naïve Bayes, 'LR': Logistic Regression, 'SVM': Support Vector Machine, 'RF': Random Forests, 'GBT': Gradient Boosted Trees
++ ngram_range: Enter a comma-separated string describing the ngram range. For example, '1,3' means that you will use unigram, bigram, and trigram features. In this paper, we used '1,3' for word-level, and '3,8' for character-level representations.
++ max_features: Due to the size of the dataset, you might want to only consider the most significant features (largest feature values). You will use feature values that are normalized with TF-IDF values. We used 14,000 for word-level, and 53,000 for character-level features. Especially for GBT, we reduced feature length even further to 1,200 and 2,300.
+
+Evaluating traiditional machine learning models require pickle files of prediction scores, generated in `./data/output/*FEATURE_LEVEL*/*CLASSIFIER*/*FOLD_NUM*/pred_output.pkl`. Please double check if you have generated such files successfully from the above training script.
+
+### Neural Network Models
+We experimented Convolutional Neural Networks (CNN) and Recurrent Neural Networks (RNN) as baselines. Before training, we generate vocabulary dictionaries (e.g. word to index), and convert each tweet message into numpy object with its feature representations.
+
+**Parameter Description**
++ feature_level: word / char
++ clf: We implemented 2 networks, CNN': Convolutional Neural Networks, 'RNN': Recurrent Neural Networks, as baseline models
++ process_vocab: Initial procedure for generating vocabulary dictionaries and converting tweets into numpy objects
++ use_glove: If True, we use GloVe pre-trained embedding for word-level features. This procedure includes downloading GloVe if you don't have it in your root directory. If False, we use randomly generated embeddings
++ context_tweet: You can include context tweet information to the word-level feature models. Please refer to the detailed description of the model in the paper
+
+**CNN Variant Models**
++ hybrid_cnn: HybridCNN is a model that combines word-level and character-level features. Baseline model is proposed by [Park and Fung](https://arxiv.org/abs/1706.01206)
+
+**RNN Variant Models**
++ TBD
 
 Go to the [./model](./model) directory and run the following script with specified parameters.
 
 ```
 python3 train_ml.py
-	--feature_level (Feature representation level. word' or 'char'; default: 'word')
-	--ngram_range (Range of n-grams for training; Type: char)
-	--max_features (Maximum length of features that you want to use; Type: int)
-	--clf (Type of classifier; Type: char)
-```
-**Parameter Description**
-+ ngram_range: Enter a comma-separated string describing the ngram range. For example, '1,3' means that you will use unigram, bigram, and trigram features. In this paper, we used '1,3' for word-level, and '3,8' for character-level representations.
-+ max_features: Due to the size of the dataset, you might want to only consider the most significant features (largest feature values). You will use feature values that are normalized with TF-IDF values. We used 14,000 for word-level, and 53,000 for character-level features. Especially for GBT, we reduced feature length even further to 1,200 and 2,300.
-+ clf: We implemented 5 different feature engineering based machine learning classifiers. Use the following representations---'NB': Naïve Bayes, 'LR': Logistic Regression, 'SVM': Support Vector Machine, 'RF': Random Forests, 'GBT': Gradient Boosted Trees
-
-## Evaluation
-### Traditional Machine Learning Models
-Evaluating traiditional machine learning models require pickle files of prediction scores, generated in `./data/output/*FEATURE_LEVEL*/*CLASSIFIER*/*FOLD_NUM*/pred_output.pkl`. Please double check if you have generated such files successfully from the above training script.
-
-Go to the [./model](./model) directory and run the following script with specified parameters.
-
-```
-python3 evaluate_ml.py
 	--feature_level (Feature representation level. word' or 'char'; default: 'word')
 	--clf (Type of classifier; Type: char)
 ```

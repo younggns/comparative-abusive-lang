@@ -21,10 +21,10 @@ def getTweetStat(id_str, e_counter_lst, api):
 	try:
 		tweet_stat = api.get_status(id_str)
 	except tweepy.error.RateLimitError:
-		print("Rate limit exceeded while processing",tweet_id,"at",str(datetime.now()))
+		print("Rate limit exceeded while processing",id_str,"at",str(datetime.now()))
 		time.sleep(60 * 15)
-		print("Reprocessing from",tweet_id,"at",str(datetime.now()))
-		tweet_stat, e_counter_lst = getTweetStat(id_str, e_counter_lst)
+		print("Reprocessing from",id_str,"at",str(datetime.now()))
+		tweet_stat, e_counter_lst = getTweetStat(id_str, e_counter_lst, api)
 	except tweepy.error.TweepError as e:
 		tweet_stat = ''
 		if e.api_code == 63: # Suspended user account
