@@ -27,6 +27,14 @@ python3 data_preprocess.py
 ```
 
 ## Training & Evaluation
+Go to the [./model](./model) directory and run the following script with specified parameters.
+
+```
+python3 train.py
+	--feature_level (Feature representation level. word' or 'char'; default: 'word')
+	--clf (Type of classifier; Type: char)
+```
+
 ### Traditional Machine Learning Models
 In order to report the baselines of feature engineering based machine learning models, we experimented with Naïve Bayes, Logistic Regression, Support Vector Machine, Random Forests, and Gradient Boosted Trees. We tune n-gram ranges and maximum length of features as hyperparameters. Please modify the code [./model/train_ml.py](./model/train_ml.py) in order to try different settings (e.g. loss function, learning rate, etc.)
 
@@ -54,13 +62,7 @@ We experimented Convolutional Neural Networks (CNN) and Recurrent Neural Network
 **RNN Variant Models**
 + TBD
 
-Go to the [./model](./model) directory and run the following script with specified parameters.
-
-```
-python3 train_ml.py
-	--feature_level (Feature representation level. word' or 'char'; default: 'word')
-	--clf (Type of classifier; Type: char)
-```
+Evaluating neural network models require checkpoint files of prediction scores, generated in `./data/output/*FEATURE_LEVEL*/*MODEL_NAME*/*FOLD_NUM*/*NAME_OF_OUTPUT_FILE*`. Please double check if you have generated such files successfully from the above training script.
 
 ## Reference
 Please refer the following paper in order to use the code as part of any publications.
