@@ -60,7 +60,8 @@ We experimented Convolutional Neural Networks (CNN) and Recurrent Neural Network
 + hybrid_cnn: HybridCNN is a model that combines word-level and character-level features. Baseline model is proposed by [Park and Fung](https://arxiv.org/abs/1706.01206)
 
 **RNN Variant Models**
-+ TBD
++ attn: In order to make the classifier better understand the text sequences, we implemented self-matching attention mechanism ([Wang et al.](http://www.aclweb.org/anthology/P17-1018)) with the RNN baseline models.
++ ltc: Latent Topic Clustering ([Yoon et al.](https://arxiv.org/abs/1710.03430)) extracts latent topic information from the hidden states of RNN in order to classify the data.
 
 Evaluating neural network models require checkpoint files of prediction scores, generated in `./data/output/*FEATURE_LEVEL*/*MODEL_NAME*/*FOLD_NUM*/*NAME_OF_OUTPUT_FILE*`. Please double check if you have generated such files successfully from the above training script.
 

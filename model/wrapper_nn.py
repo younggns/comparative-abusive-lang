@@ -201,38 +201,52 @@ def save_kfold_npy(data_list, name, path, k):
 			np.save(file_name, array)
 			print("Saved in %s. %s" % (file_name, str(array.shape)))
 
-def modelSpec(is_hybrid):
+def modelSpecCNN(is_hybrid):
 	print("\n#############################\n#### Model Specification ####\n#############################\n")
-	batch_size_str = input("{:30}".format("Batch size:"))
-	epoch_str = input("{:30}".format("Number of epoch:"))
+	batch_size = int(input("{:30}".format("Batch size:")))
+	num_epochs = int(input("{:30}".format("Number of epoch:")))
 	if is_hybrid:
 		filter_sizes_str_word = input("{:30}".format("Word Filter sizes (e.g. 1,2,3):"))
-		num_filters_str_word = input("{:30}".format("Number of word filters:"))
+		num_filters_word = int(input("{:30}".format("Number of word filters:")))
 		filter_sizes_str_char = input("{:30}".format("Char Filter sizes (e.g. 1,2,3):"))
-		num_filters_str_char = input("{:30}".format("Number of char filters:"))
+		num_filters_char = int(input("{:30}".format("Number of char filters:")))
 	else:
 		filter_sizes_str = input("{:30}".format("Filter sizes (e.g. 1,2,3):"))
-		num_filters_str = input("{:30}".format("Number of filters:"))
+		num_filters = int(input("{:30}".format("Number of filters:")))
 	train_embedding_str = input("{:30}".format("Train embedding? (True/False):"))
-	lr_str = input("{:30}".format("Learning rate:"))
+	lr = float(input("{:30}".format("Learning rate:")))
 
-	batch_size = int(batch_size_str)
-	num_epochs = int(epoch_str)
 	if is_hybrid:
 		filter_sizes_word = [int(elem) for elem in filter_sizes_str_word.split(',')]
-		num_filters_word = int(num_filters_str_word)
 		filter_sizes_char = [int(elem) for elem in filter_sizes_str_char.split(',')]
-		num_filters_char = int(num_filters_str_char)
 	else:
 		filter_sizes = [int(elem) for elem in filter_sizes_str.split(',')]
-		num_filters = int(num_filters_str)
 	train_embedding = helper.str2bool(train_embedding_str)
-	lr = float(lr_str)
 
 	if is_hybrid:
 		return batch_size, num_epochs, filter_sizes_word, num_filters_word, filter_sizes_char, num_filters_char, train_embedding, lr
 	else:
 		return batch_size, num_epochs, filter_sizes, num_filters, train_embedding, lr
+
+def modelSpecRNN():
+	print("\n#############################\n#### Model Specification ####\n#############################\n")
+	batch_size = input("{:30}".format("Batch size:"))
+	encoder_size = input("{:30}".format("Encoder size:"))
+	num_layer = input("{:30}".format("Number of layers:"))
+	hidden_dim = input("{:30}".format("Hidden layer dimension:"))
+	num_train_steps = input("{:30}".format("Number of train steps:"))
+	lr = input("{:30}".format("Learning rate:"))
+	dr = input("{:30}".format("Dropout probability:"))
+	is_save_str = input("{:30}".format("Save best result? (True/False):"))
+	attn_str = input("{:30}".format("Apply attention? (True/False):"))
+	ltc_str = input("{:30}".format("Apply LTC? (True/False):"))
+	graph_prefix = input("{:30}".format("Graph prefix:"))
+
+	is_save = helper.str2bool(is_save_str)
+	attn = helper.str2bool(attn_str)
+	ltc = helper.str2bool(ltc_str)
+
+	return batch_size, encoder_size, num_layer, hidden_dim, lr, num_train_steps, is_save, dr, attn, ltc, graph_prefix
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
@@ -272,18 +286,28 @@ if __name__ == "__main__":
 			is_hybrid = helper.str2bool(is_hybrid_str)
 			
 			if is_hybrid:
-				batch_size, num_epochs, filter_sizes_word, num_filters_word, filter_sizes_char, num_filters_char, train_embedding, lr = modelSpec(is_hybrid)
+				batch_size, num_epochs, filter_sizes_word, num_filters_word, filter_sizes_char, num_filters_char, train_embedding, lr = modelSpecCNN(is_hybrid)
 				for index in range(10):
 					models_cnn.train_hybrid_cnn(use_glove, index, batch_size, num_epochs, filter_sizes_word, num_filters_word, filter_sizes_char, num_filters_char, train_embedding, lr)
 				models_cnn.test_hybrid_cnn(use_glove, 10)
 			else:
 				use_ctxt_str = input("{:30}".format("Use context tweet? (True/False):"))
 				use_ctxt = helper.str2bool(use_ctxt_str)
-				batch_size, num_epochs, filter_sizes, num_filters, train_embedding, lr = modelSpec(is_hybrid)
+				batch_size, num_epochs, filter_sizes, num_filters, train_embedding, lr = modelSpecCNN(is_hybrid)
 				for index in range(10):
 					models_cnn.train_word_cnn(use_glove, use_ctxt, index, batch_size, num_epochs, filter_sizes, num_filters, train_embedding, lr)
 				models_cnn.test_word_cnn(use_glove, use_ctxt, 10)
-		# else:
+		else:
+			for index in range(10):
+				data_path = path + "/" +str(index) + "/"
+				batch_size, encoder_size, num_layer, hidden_dim, lr, num_train_steps, is_save, dr, attn, ltc, graph_prefix = modelSpecRNN()
+				
+				use_glove_rnn = 1 if use_glove==True else 0
+				is_save_rnn = 1 if is_save==True else 0
+				attn_rnn = 1 if attn==True else 0
+				ltc_rnn = 1 if ltc==True else 0
+
+				os.system("python3 models_rnn.py --batch_size "+batch_size+" --encoder_size "+encoder_size+" --num_layer "+num_layer+" --hidden_dim "+hidden_dim+" --lr "+lr+" --num_train_steps "+num_train_steps+" --is_save "+is_save_rnn+" --dr "+dr+" --use_glove "+use_glove_rnn+" --attn "+attn_rnn+" --ltc "+ltc_rnn+" --graph_prefix "+graph_prefix+" --data_path "+data_path)
 
 	else: # character models
 		if process_vocab:
@@ -301,14 +325,15 @@ if __name__ == "__main__":
 			if is_hybrid:
 				use_glove_str = input("{:30}".format("Use GloVe? (True/False):"))
 				use_glove = helper.str2bool(use_glove_str)
-				batch_size, num_epochs, filter_sizes_word, num_filters_word, filter_sizes_char, num_filters_char, train_embedding, lr = modelSpec(is_hybrid)
+				batch_size, num_epochs, filter_sizes_word, num_filters_word, filter_sizes_char, num_filters_char, train_embedding, lr = modelSpecCNN(is_hybrid)
 				for index in range(10):
 					models_cnn.train_hybrid_cnn(use_glove, index, batch_size, num_epochs, filter_sizes_word, num_filters_word, filter_sizes_char, num_filters_char, train_embedding, lr)
 				models_cnn.test_hybrid_cnn(use_glove, index)
 			else:
-				batch_size, num_epochs, filter_sizes, num_filters, train_embedding, lr = modelSpec(is_hybrid)
+				batch_size, num_epochs, filter_sizes, num_filters, train_embedding, lr = modelSpecCNN(is_hybrid)
 				for index in range(10):
 					models_cnn.train_char_cnn(index, batch_size, num_epochs, filter_sizes, num_filters, train_embedding, lr)
 				models_cnn.test_char_cnn(10)
 		# else:
+		# 	os.system("python3 models_rnn.py ")
 
