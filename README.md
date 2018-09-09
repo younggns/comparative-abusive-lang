@@ -1,4 +1,3 @@
-*Still working with code distribution. Please contact me (younggnse@gmail.com) if you have any questions.*
 # Comparative Studies of Detecting Abusive Language on Twitter
 
 Python 3.6.0 implementation of ["Comparative Studies of Detecting Abusive Language on Twitter"](http://arxiv.org/abs/1808.10245) accepted in EMNLP 2018 Workshop on Abusive Language Online (ALW2).
