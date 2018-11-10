@@ -1,6 +1,6 @@
 # Comparative Studies of Detecting Abusive Language on Twitter
 
-Python 3.6.0 implementation of ["Comparative Studies of Detecting Abusive Language on Twitter"](http://arxiv.org/abs/1808.10245) accepted in <a><href="http://emnlp2018.org/program/workshops/">EMNLP 2018 Workshop on Abusive Language Online (ALW2)</a>.
+Python 3.6.0 implementation of ["Comparative Studies of Detecting Abusive Language on Twitter"](http://arxiv.org/abs/1808.10245) accepted in <a href="http://emnlp2018.org/program/workshops/">EMNLP 2018 Workshop on Abusive Language Online (ALW2)</a>.
 This paper conducts a comparative study of various learning models on [Hate and Abusive Speech on Twitter](https://github.com/ENCASEH2020/hatespeech-twitter) dataset, which has great potential in training deep models with its significant size.
 
 ## Requirements
