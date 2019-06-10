@@ -6,58 +6,92 @@ import numpy as np
 
 from tensorflow.contrib.rnn import MultiRNNCell
 from tensorflow.contrib.rnn import RNNCell
-from params import Params
+from layers.RNN_params import Params
+
+#from zoneout import ZoneoutWrapper
+'''
+attention weights from https://www.microsoft.com/en-us/research/wp-content/uploads/2017/05/r-net.pdf
+W_u^Q.shape:    (2 * attn_size, attn_size)
+W_u^P.shape:    (2 * attn_size, attn_size)
+W_v^P.shape:    (attn_size, attn_size)
+W_g.shape:      (4 * attn_size, 4 * attn_size)
+W_h^P.shape:    (2 * attn_size, attn_size)
+W_v^Phat.shape: (2 * attn_size, attn_size)
+W_h^a.shape:    (2 * attn_size, attn_size)
+W_v^Q.shape:    (attn_size, attn_size)
+'''
 
 def get_attn_params(attn_size,initializer = tf.truncated_normal_initializer):
+    '''
+    Args:
+        attn_size: the size of attention specified in https://www.microsoft.com/en-us/research/wp-content/uploads/2017/05/r-net.pdf
+        initializer: the author of the original paper used gaussian initialization however I found xavier converge faster
+
+    Returns:
+        params: A collection of parameters used throughout the layers
+    '''
     with tf.variable_scope("attention_weights"):
         params = {
+                # 0 case "W_u_Q":tf.get_variable("W_u_Q",dtype = tf.float32, shape = (2 * attn_size, attn_size), initializer = initializer()),
+                #"W_ru_Q":tf.get_variable("W_ru_Q",dtype = tf.float32, shape = (2 * attn_size, 2 * attn_size), initializer = initializer()),
+                # 0 case ""W_u_P":tf.get_variable("W_u_P",dtype = tf.float32, shape = (2 * attn_size, attn_size), initializer = initializer()),
+                # 0 case ""W_v_P":tf.get_variable("W_v_P",dtype = tf.float32, shape = (attn_size, attn_size), initializer = initializer()),
                 "W_v_P_2":tf.get_variable("W_v_P_2",dtype = tf.float32, shape = (2 * attn_size, attn_size), initializer = initializer()),
                 "W_g":tf.get_variable("W_g",dtype = tf.float32, shape = (4 * attn_size, 4 * attn_size), initializer = initializer()),
+                #"W_h_P":tf.get_variable("W_h_P",dtype = tf.float32, shape = (2 * attn_size, attn_size), initializer = initializer()),
                 "W_v_Phat":tf.get_variable("W_v_Phat",dtype = tf.float32, shape = (2 * attn_size, attn_size), initializer = initializer()),
+                #"W_h_a":tf.get_variable("W_h_a",dtype = tf.float32, shape = (2 * attn_size, attn_size), initializer = initializer()),
+                #"W_v_Q":tf.get_variable("W_v_Q",dtype = tf.float32, shape = (attn_size,  attn_size), initializer = initializer()),
                 "v":tf.get_variable("v",dtype = tf.float32, shape = (attn_size), initializer =initializer())}
         return params
 
-def apply_dropout(inputs, size = None, is_training = True, dropout=None):
-    if dropout is None:
+
+def apply_dropout(inputs, size = None, is_training = True, input_keep_prob=1.0, output_keep_prob=1.0):
+    '''
+    Implementation of Zoneout from https://arxiv.org/pdf/1606.01305.pdf
+    '''
+    if ( (input_keep_prob==1.0) & (output_keep_prob==1.0) ):
         return inputs
+    #if Params.zoneout is not None:
+    #    return ZoneoutWrapper(inputs, state_zoneout_prob= Params.zoneout, is_training = is_training)
     elif is_training:
         return tf.contrib.rnn.DropoutWrapper(inputs,
-                                            output_keep_prob = dropout,
-                                            # variational_recurrent = True,
-                                            # input_size = size,
-                                            dtype = tf.float32)
+                                             input_keep_prob  = input_keep_prob,
+                                             output_keep_prob = output_keep_prob,
+                                             # variational_recurrent = True,
+                                             # input_size = size,
+                                             dtype = tf.float32)
     else:
         return inputs
 
-# cell instance
-def gru_cell(units):
-    return tf.contrib.rnn.GRUCell(num_units=units)
-
-# cell instance with drop-out wrapper applied
-def gru_drop_out_cell(dr_prob=1.0, units=0):
-    return tf.contrib.rnn.DropoutWrapper(gru_cell(units), 
-                                         input_keep_prob=dr_prob,
-                                         output_keep_prob=1.0,
-                                         dtype = tf.float32
-                                        )
+    
 
     
-def bidirectional_GRU(inputs, inputs_len, cell = None, cell_fn = tf.contrib.rnn.GRUCell, units = 0, layers = 1, scope = "Bidirectional_GRU", output = 0, is_training = True, reuse = None, dr_prob=1.0, is_bidir=False):
+def bidirectional_GRU(inputs, inputs_len, cell = None, cell_fn = tf.contrib.rnn.GRUCell, units = 0, layers = 1, scope = "Bidirectional_GRU", output = 0, is_training = True, reuse = None, dr_input_keep_prob=1.0, dr_output_keep_prob=1.0, is_bidir=False):
+    '''
+    Bidirectional recurrent neural network with GRU cells.
 
+    Args:
+        inputs:     rnn input of shape (batch_size, timestep, dim)
+        inputs_len: rnn input_len of shape (batch_size, )
+        cell:       rnn cell of type RNN_Cell.
+        output:     [ batch, step, dim (fw;bw) ], [ batch, dim (fw;bw) ]
+    '''
     with tf.variable_scope(scope, reuse = reuse, initializer=tf.orthogonal_initializer()):
         if cell is not None:
             (cell_fw, cell_bw) = cell
         else:
             shapes = inputs.get_shape().as_list()
             if len(shapes) > 3:
+                print ('input reshaped!!!')
                 inputs = tf.reshape(inputs,(shapes[0]*shapes[1],shapes[2],-1))
                 inputs_len = tf.reshape(inputs_len,(shapes[0]*shapes[1],))
 
             # if no cells are provided, use standard GRU cell implementation
             if layers > 1:
-                cell_fw = MultiRNNCell([apply_dropout(cell_fn(units), size = inputs.shape[-1] if i == 0 else units, is_training = is_training, dropout=dr_prob) for i in range(layers)])
+                cell_fw = MultiRNNCell([apply_dropout(cell_fn(units), size = inputs.shape[-1] if i == 0 else units, is_training = is_training, input_keep_prob=dr_input_keep_prob, output_keep_prob=dr_output_keep_prob) for i in range(layers)])
                 if is_bidir: 
-                    cell_bw = MultiRNNCell([apply_dropout(cell_fn(units), size = inputs.shape[-1] if i == 0 else units, is_training = is_training, dropout=dr_prob) for i in range(layers)])
+                    cell_bw = MultiRNNCell([apply_dropout(cell_fn(units), size = inputs.shape[-1] if i == 0 else units, is_training = is_training, input_keep_prob=dr_input_keep_prob, output_keep_prob=dr_output_keep_prob) for i in range(layers)])
             else:
                 cell_fw = apply_dropout(cell_fn(units), size = inputs.shape[-1], is_training = is_training)
                 if is_bidir: 
@@ -90,7 +124,7 @@ def bidirectional_GRU(inputs, inputs_len, cell = None, cell_fn = tf.contrib.rnn.
                                                 scope = scope,
                                                 time_major=False)
             return outputs, states
-
+        
 
 def attention_rnn(inputs, inputs_len, units, attn_cell, bidirection = True, scope = "gated_attention_rnn", is_training = True, dr_prob=1.0, is_bidir=False):
     with tf.variable_scope(scope):
@@ -105,7 +139,7 @@ def attention_rnn(inputs, inputs_len, units, attn_cell, bidirection = True, scop
                                         reuse = False,
                                         output = 0,
                                         is_training = True,
-                                        dr_prob = dr_prob,
+                                        dr_input_keep_prob = dr_prob,
                                         is_bidir = True
                                        )
         else:
@@ -115,15 +149,15 @@ def attention_rnn(inputs, inputs_len, units, attn_cell, bidirection = True, scop
             
         return outputs, last_states
 
-
+    
 def gated_attention(memory, inputs, states, units, params, self_matching = False, memory_len = None, scope="gated_attention", batch_size=0):
     with tf.variable_scope(scope):
         weights, W_g = params        
         inputs_ = [memory, inputs]
-        states = tf.reshape(states,(batch_size, units))
+        states = tf.reshape(states,(int(batch_size), int(units)))
         if not self_matching:
             inputs_.append(states)
-        scores = attention(inputs_, units, weights, memory_len = memory_len, batch_size = batch_size)
+        scores = attention(inputs_, int(units), weights, memory_len = memory_len, batch_size = int(batch_size))
         scores = tf.expand_dims(scores,-1)
         attention_pool = tf.reduce_sum(scores * memory, 1)
         inputs = tf.concat((inputs,attention_pool),axis = 1)
@@ -166,4 +200,3 @@ def attention(inputs, units, weights, scope = "attention", memory_len = None, re
             scores = mask_attn_score(scores, memory_len)
         return tf.nn.softmax(scores) # all attention output is softmaxed now
     
-

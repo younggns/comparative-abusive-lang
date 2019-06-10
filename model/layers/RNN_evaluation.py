@@ -13,7 +13,7 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import precision_score
 
-from params import Params
+from layers.RNN_params import Params
 
 """
     desc  : 
@@ -36,13 +36,13 @@ def run_test(sess, model, batch_gen, data):
     list_pred = []
     list_label = []
 
-    max_loop  = len(data) / model.batch_size
-    remaining = len(data) % model.batch_size
+    max_loop  = int(len(data) / model.batch_size)
+    remaining = int(len(data) % model.batch_size)
 
     # evaluate data ( N of chunk (batch_size) + remaining( +1) )
-    for test_itr in xrange( max_loop + 1 ):
+    for test_itr in range( max_loop + 1 ):
         
-        raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_input_ori, raw_encoder_seq_ori, raw_label = batch_gen.get_batch(
+        raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_type_con, raw_encoder_input_ori, raw_encoder_seq_ori, raw_encoder_type_ori, raw_label = batch_gen.get_batch(
                                         data=data,
                                         batch_size=model.batch_size,
                                         encoder_size=model.encoder_size,
@@ -55,9 +55,11 @@ def run_test(sess, model, batch_gen, data):
 
         input_feed[model.encoder_inputs_c] = raw_encoder_input_con
         input_feed[model.encoder_seq_c] = raw_encoder_seq_con
+        input_feed[model.encoder_type_c] = raw_encoder_type_con
 
         input_feed[model.encoder_inputs_o] = raw_encoder_input_ori
         input_feed[model.encoder_seq_o] = raw_encoder_seq_ori
+        input_feed[model.encoder_type_o] = raw_encoder_type_ori
         
         input_feed[model.y_labels] = raw_label
         
@@ -70,7 +72,7 @@ def run_test(sess, model, batch_gen, data):
         try:
             bpred, bloss = sess.run([model.batch_pred, model.batch_loss], input_feed)
         except:
-            print "excepetion occurs in valid step : " + str(test_itr)
+            print ("excepetion occurs in valid step : " + str(test_itr))
             pass
         
         # remaining data case (last iteration)
@@ -86,9 +88,6 @@ def run_test(sess, model, batch_gen, data):
         list_pred.extend( np.argmax(bpred, axis=1) )
         list_label.extend( np.argmax(raw_label, axis=1) )
         
-    #list_batch_correct = [1 for x, y in zip(list_pred,list_label) if x==y]
-    #accr = np.sum ( list_batch_correct ) / float( len(data) )
-    
     
     accr_class = precision_score(y_true=list_label,
                            y_pred=list_pred,

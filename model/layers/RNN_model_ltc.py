@@ -18,7 +18,7 @@ output :
    - final_encoder_dimension : 
 '''
 def ltc( batch_size, topic_size, memory_dim, input_hidden_dim, input_encoder, dr_memory_prob=1.0 ):
-    print '[launch : model_ltc] s.y. Latent Topic Cluster method'
+    print ('[launch : model_ltc] s.y. Latent Topic Cluster method')
 
     with tf.name_scope('ltc') as scope:
 
@@ -40,7 +40,7 @@ def ltc( batch_size, topic_size, memory_dim, input_hidden_dim, input_encoder, dr
 
         topic_sim_project = tf.matmul( input_encoder, memory_W ) + memory_bias
 
-        # context 와 topic 의 similairty 계산
+        # context - topic  similairty 
         topic_sim = tf.matmul( topic_sim_project, memory, transpose_b=True )
         
         # add non-linearity
@@ -49,9 +49,6 @@ def ltc( batch_size, topic_size, memory_dim, input_hidden_dim, input_encoder, dr
         # normalize
         topic_sim_sigmoid_softmax = tf.nn.softmax( logits=topic_sim, dim=-1)
 
-        # memory_context 를 계산  memory 를 topic_sim_norm 으로 weighted sum 수행
-        # batch_size = 1 인 경우를 위해서 shape 을 맞추어줌
-        # batch_size > 1 인 경우는 원래 형태와 변화가 없음
         shaped_input = tf.reshape( topic_sim_sigmoid_softmax, [batch_size, topic_size])
 
         topic_sim_mul_memory = tf.scan( lambda a, x : tf.multiply( tf.transpose(memory), x ), shaped_input, initializer=tf.transpose(memory) )

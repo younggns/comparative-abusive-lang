@@ -18,7 +18,7 @@ from layers.RNN_params import Params
 
 # for training         
 def train_step(sess, model, batch_gen):
-    raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_input_ori, raw_encoder_seq_ori, raw_label = batch_gen.get_batch(
+    raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_type_con, raw_encoder_input_ori, raw_encoder_seq_ori, raw_encoder_type_ori, raw_label = batch_gen.get_batch(
                                         data=batch_gen.train_set,
                                         batch_size=model.batch_size,
                                         encoder_size=model.encoder_size,                                        
@@ -30,9 +30,11 @@ def train_step(sess, model, batch_gen):
     
     input_feed[model.encoder_inputs_c] = raw_encoder_input_con
     input_feed[model.encoder_seq_c] = raw_encoder_seq_con
+    input_feed[model.encoder_type_c] = raw_encoder_type_con
 
     input_feed[model.encoder_inputs_o] = raw_encoder_input_ori
     input_feed[model.encoder_seq_o] = raw_encoder_seq_ori
+    input_feed[model.encoder_type_o] = raw_encoder_type_ori
     
     input_feed[model.y_labels] = raw_label
     
@@ -77,7 +79,7 @@ def train_model(model, batch_gen, num_train_steps, valid_freq, is_save=0, graph_
         test_f1_at_best_dev = 0
         test_zip_at_best_dev = None
         
-        for index in xrange(num_train_steps):
+        for index in range(num_train_steps):
 
             try:
                 # run train 
@@ -131,7 +133,13 @@ def train_model(model, batch_gen, num_train_steps, valid_freq, is_save=0, graph_
                         test_f1 = 0
                         early_stop_count = early_stop_count -1
                         
-                    print(str( int(end_time - initial_time)/60 ) + " mins" + " step/seen/itr: " + str( model.global_step.eval() ) + "/ " + str( model.global_step.eval() * model.batch_size ) + "/" + str( round( model.global_step.eval() * model.batch_size / float(len(batch_gen.train_set)), 2)  ) + "\tdev: " + '{:.3f}'.format(dev_f1)  + "  test: " + '{:.3f}'.format(test_f1) + "  loss: " + '{:.2f}'.format(dev_ce))
+                    print (str( int((end_time - initial_time)/60) ) + " mins" + \
+                          " step/seen/itr: " + str( model.global_step.eval() ) + "/ " + \
+                           str( model.global_step.eval() * model.batch_size ) + "/" + \
+                           str( round( model.global_step.eval() * model.batch_size / float(len(batch_gen.train_set)), 2)  ) + \
+                           "\tdev: " + '{:.3f}'.format(dev_f1)  + \
+                           "  test: " + '{:.3f}'.format(test_f1) + \
+                           "  loss: " + '{:.2f}'.format(dev_ce))
                 
         writer.close()
             
@@ -144,12 +152,31 @@ def train_model(model, batch_gen, num_train_steps, valid_freq, is_save=0, graph_
         
         # result logging to file
         with open('./TEST_run_result.txt', 'a') as f:
-            f.write(datetime.datetime.now().strftime("%Y-%m-%d %H:%M") + '\t' + batch_gen.data_path.split('/')[-2] + '\t' + graph_dir_name + '\t' + str(best_dev_f1) + '\t' + str(test_f1_at_best_dev) + '\t' + '\t'.join(str(i) for i in accr_class) + '\t' + '\t'.join(str(i) for i in recall_class) + '\t' + '\t'.join(str(i) for i in f1_class) + '\t' + str(accr_avg) + '\t' + str(recall_avg) + '\t' + str(f1_avg) + '\n')
+            f.write(datetime.datetime.now().strftime("%Y-%m-%d %H:%M") + '\t' + \
+                    batch_gen.data_path.split('/')[-2] + '\t' + \
+                    graph_dir_name + '\t' + \
+                    #str(best_dev_f1) + '\t' + \
+                    #str(test_f1_at_best_dev) + '\t' + \
+                    str(accr_class[0]) + '\t' + \
+                    str(recall_class[0]) + '\t' + \
+                    str(f1_class[0]) + '\t\t' + \
+                    str(accr_class[1]) + '\t' + \
+                    str(recall_class[1]) + '\t' + \
+                    str(f1_class[1]) + '\t\t' + \
+                    str(accr_class[2]) + '\t' + \
+                    str(recall_class[2]) + '\t' + \
+                    str(f1_class[2]) + '\t\t' + \
+                    str(accr_class[3]) + '\t' + \
+                    str(recall_class[3]) + '\t' + \
+                    str(f1_class[3]) + '\t\t' + \
+                    str(accr_avg) + '\t' + \
+                    str(recall_avg) + '\t' + \
+                    str(f1_avg) + \
+                    '\n')
 
 def create_dir(dir_name):
     if not os.path.isdir(dir_name):
         os.mkdir(dir_name)
-        
         
 def main(data_path, batch_size, encoder_size, num_layer, hidden_dim, 
          num_train_steps, lr, is_save, graph_dir_name,
