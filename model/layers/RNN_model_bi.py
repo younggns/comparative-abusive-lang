@@ -285,8 +285,8 @@ class SingleEncoderModelBi:
         
         with tf.name_scope('loss') as scope:
             
-            self.batch_loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=self.batch_pred, labels=self.y_labels )
-            #self.batch_loss = tf.nn.softmax_cross_entropy_with_logits(logits=self.batch_pred, labels=self.y_labels )
+            #self.batch_loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=self.batch_pred, labels=self.y_labels )
+            self.batch_loss = tf.nn.softmax_cross_entropy_with_logits(logits=self.batch_pred, labels=self.y_labels )
             self.tmp_batch_loss = self.batch_loss
             
             if Params.is_minority_use:

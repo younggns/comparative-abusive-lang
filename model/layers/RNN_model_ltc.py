@@ -53,10 +53,8 @@ def ltc( batch_size, topic_size, memory_dim, input_hidden_dim, input_encoder, dr
 
         topic_sim_mul_memory = tf.scan( lambda a, x : tf.multiply( tf.transpose(memory), x ), shaped_input, initializer=tf.transpose(memory) )
         tmpT = tf.reduce_sum(topic_sim_mul_memory, axis=-1, keep_dims=True)
-        tmpT2 = tf.transpose(tmpT, [0, 2, 1])
-
-        rsum = tf.reshape( tmpT2, [batch_size, memory_dim])
-
+        rsum = tf.squeeze( tmpT )
+        
         # final context 
         final_encoder  = tf.concat( [input_encoder, rsum], axis=-1 )
 

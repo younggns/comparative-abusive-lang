@@ -52,8 +52,8 @@ class Params ():
     self_matching_layers  = 1             
     self_matching_bidir   = True
     
-    N_LTC_TOPIC   = 2                 # for LTC method
-    N_LTC_MEM_DIM = 100               # for LTC method
+    N_LTC_TOPIC   = 3                 # for LTC method
+    N_LTC_MEM_DIM = 50                # for LTC method
     LTC_dr_prob   = 0.8               # for LTC method
     
     

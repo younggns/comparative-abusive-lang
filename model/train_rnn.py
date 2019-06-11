@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 
 """
-what    : train SE model
+what    : train RNN-LTC model (word-level)
 data    : twitter
 """
 import tensorflow as tf
