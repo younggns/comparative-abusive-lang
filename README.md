@@ -34,6 +34,15 @@ python3 train.py
 	--clf (Type of classifier; Type: char)
 ```
 
+For the RNN models, please refer the reference script.
+```
+./model/reference_script_train.sh
+```
+- results will be displayed in console 
+- fianl results will be appended in "./model/TEST_run_result.txt" 
+
+
+
 ### Traditional Machine Learning Models
 In order to report the baselines of feature engineering based machine learning models, we experimented with Naïve Bayes, Logistic Regression, Support Vector Machine, Random Forests, and Gradient Boosted Trees. We tune n-gram ranges and maximum length of features as hyperparameters. Please modify the code [./model/train_ml.py](./model/train_ml.py) in order to try different settings (e.g. loss function, learning rate, etc.)
 
