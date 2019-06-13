@@ -34,7 +34,7 @@ python3 train.py
 	--clf (Type of classifier; Type: char)
 ```
 
-For the RNN models, please refer the reference script.
+For the RNN models, please refer the reference script. (updated 11-Jun-2019)
 ```
 ./model/reference_script_train.sh
 ```
