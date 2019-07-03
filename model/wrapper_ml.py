@@ -97,7 +97,8 @@ def report_average(report_list):
 			if label not in data:
 				data = np.insert(data, i, masked_data[i], axis=0)
 		data = np.delete(data, 0, 1).astype(float)
-		avg_total = np.array([x for x in splitted[2].split(' ')][3:]).astype(float).reshape(-1, len(header))
+		# avg_total = np.array([x for x in splitted[2].split(' ')][3:]).astype(float).reshape(-1, len(header))
+		avg_total = np.array([x for x in splitted[2].split('weighted avg ')[1].split(' ')]).astype(float).reshape(-1, len(header))
 		df = pd.DataFrame(np.concatenate((data, avg_total)), columns=header)
 		output_report_list.append(df)
 	res = functools.reduce(lambda x, y: x.add(y, fill_value=0), output_report_list) / len(output_report_list)
