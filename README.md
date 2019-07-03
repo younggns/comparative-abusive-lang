@@ -39,7 +39,7 @@ For the RNN models, please refer the reference script. (updated 11-Jun-2019)
 ./model/reference_script_train.sh
 ```
 - results will be displayed in console 
-- fianl results will be appended in "./model/TEST_run_result.txt" 
+- final results will be appended in "./model/TEST_run_result.txt" 
 - preprocessed dataset [<a href="http://milabfile.snu.ac.kr:16000/share-EMNLP-WS-18_abusive/data.tar.gz">link</a>] (tested with the RNN models)
 
 
