@@ -40,7 +40,8 @@ For the RNN models, please refer the reference script. (updated 11-Jun-2019)
 ```
 - results will be displayed in console 
 - final results will be appended in "./model/TEST_run_result.txt" 
-- [for quick test purpose] preprocessed dataset [<a href="http://milabfile.snu.ac.kr:16000/share-EMNLP-WS-18_abusive/data.tar.gz">link</a>] (works only for the RNN models (train_rnn.py, train_rnn_ctx.py) except for character-level RNN (train_rnn_char.py) )
+- [for quick test purpose] preprocessed dataset [<a href="http://milabfile.snu.ac.kr:16000/share-EMNLP-WS-18_abusive/data.tar.gz">link</a>] <br> 
+(works only for the RNN models (train_rnn.py, train_rnn_ctx.py) except for character-level RNN (train_rnn_char.py) )
 
 
 
