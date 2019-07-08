@@ -85,6 +85,7 @@ For the RNN models, please refer the reference script. (updated 11-Jun-2019)
 ./model/reference_script_train.sh
 ```
 
+- You can comment out python scripts you don't want to run before running **reference_script_train.sh**. Check hyperparameter values before running the script as well. You can start training RNN models by executing the bash script above.
 - results will be displayed in console 
 - final results will be appended in "./model/TEST_run_result.txt" 
 - [for quick test purpose] preprocessed dataset [<a href="http://milabfile.snu.ac.kr:16000/share-EMNLP-WS-18_abusive/data.tar.gz">link</a>] <br> 
