@@ -72,11 +72,11 @@ class SingleEncoderModelBi:
             
             self.encoder_inputs_o  = tf.placeholder(tf.int32, shape=[self.batch_size, self.encoder_size], name="encoder_o")  # [batch,time_step]
             self.encoder_seq_o     = tf.placeholder(tf.int32, shape=[self.batch_size], name="encoder_seq_o")   # [batch] - valid word step
-            self.encoder_type_o    = tf.placeholder(tf.int32, shape=[self.batch_size, 5], name="encoder_type_o")   # [batch] - tweet type 0-5
+            # self.encoder_type_o    = tf.placeholder(tf.int32, shape=[self.batch_size, 5], name="encoder_type_o")   # [batch] - tweet type 0-5
             
             self.encoder_inputs_c  = tf.placeholder(tf.int32, shape=[self.batch_size, self.encoder_size], name="encoder_c")  # [batch,time_step]
             self.encoder_seq_c     = tf.placeholder(tf.int32, shape=[self.batch_size], name="encoder_seq_c")   # [batch] - valid word step
-            self.encoder_type_c    = tf.placeholder(tf.int32, shape=[self.batch_size, 5], name="encoder_type_c")   # [batch] - tweet type 0-5
+            # self.encoder_type_c    = tf.placeholder(tf.int32, shape=[self.batch_size, 5], name="encoder_type_c")   # [batch] - tweet type 0-5
             
             self.y_labels        = tf.placeholder(tf.float32, shape=[self.batch_size, Params.N_CATEGORY], name="label")
             

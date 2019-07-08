@@ -25,8 +25,8 @@ class Params ():
     CHAR_DATA_TEST_LABEL            = 'Label_test.npy'
     CHAR_DATA_TEST_TRANS = 'Char_InputText_test.npy'
 
-    DIC                                  = 'dic.pkl'
-    GLOVE                             = 'W_embedding.npy'
+    DIC                                  = 'vocab.pkl' #'dic.pkl'
+    GLOVE                             = 'embedding.npy' #'W_embedding.npy'
 
     ################################
     #     training

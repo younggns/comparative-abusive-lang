@@ -27,9 +27,10 @@ class ProcessData:
         self.test_set  = self.load_data(Params.DATA_TEST_TRANS, Params.DATA_TEST_TYPE, Params.DATA_TEST_LABEL)
         
         self.dic_size = 0
-        with open( data_path + Params.DIC, 'rb' ) as f:
-            #self.dic_size = len( pickle.load(f)['id2word'] )
-            self.dic_size = len( pickle.load(f) )
+        # with open( data_path + Params.DIC, 'rb' ) as f:
+            # self.dic_size = len( pickle.load(f) )
+        with open( data_path + "../" + Params.DIC, 'rb' ) as f:
+            self.dic_size = len( pickle.load(f)['id2word'] )
 
             
     def load_data(self, text_trans, text_type, label):
@@ -38,25 +39,27 @@ class ProcessData:
         output_set = []
 
         tmp_text_trans        = np.load(self.data_path + text_trans) 
-        tmp_text_type         = np.load(self.data_path + text_type)        
+        # tmp_text_type         = np.load(self.data_path + text_type)        
         
         context_text  = [ x[:100] for x in tmp_text_trans ]
         original_text  = [ x[100:] for x in tmp_text_trans ]
         
-        context_type = [ np.where(x[:5]==1)[0][0] for x in tmp_text_type]
-        original_type = [ np.where(x[5:]==1)[0][0] for x in tmp_text_type]     
+        # context_type = [ np.where(x[:5]==1)[0][0] for x in tmp_text_type]
+        # original_type = [ np.where(x[5:]==1)[0][0] for x in tmp_text_type]     
         
         tmp_label     = np.load(self.data_path + label)
 
         for i in range( len(tmp_label) ) :
-            output_set.append( [ context_text[i], context_type[i], original_text[i], original_type[i], tmp_label[i] ] )
+            # output_set.append( [ context_text[i], context_type[i], original_text[i], original_type[i], tmp_label[i] ] )
+            output_set.append( [ context_text[i], original_text[i], tmp_label[i] ] )
         print ('[completed] load data')
         
         return output_set
         
         
     def get_glove(self):
-        return np.load( self.data_path + Params.GLOVE )
+        # return np.load( self.data_path + Params.GLOVE )
+        return np.load( self.data_path + "../" + Params.GLOVE )
         
     
     """
@@ -81,7 +84,8 @@ class ProcessData:
     """
     def get_batch(self, data, batch_size, encoder_size, is_test=False, start_index=0):
 
-        con_texts, con_seqs, con_types, ori_texts, ori_seqs, ori_types, labels = [], [], [], [], [], [], []
+        # con_texts, con_seqs, con_types, ori_texts, ori_seqs, ori_types, labels = [], [], [], [], [], [], []
+        con_texts, con_seqs, ori_texts, ori_seqs, labels = [], [], [], [], []
         index = start_index
         
         # Get a random batch of encoder and encoderR inputs from data,
@@ -91,15 +95,18 @@ class ProcessData:
 
             if is_test is False:
                 # train case -  random sampling
-                con_text, con_type, ori_text, ori_type, label = random.choice(data)
+                # con_text, con_type, ori_text, ori_type, label = random.choice(data)
+                con_text, ori_text, label = random.choice(data)
                 
             else:
                 # dev, test case = ordered data
                 if index >= len(data):
-                    con_text, con_type, ori_text, ori_type, label = data[0]  # won't be evaluated
+                    # con_text, con_type, ori_text, ori_type, label = data[0]  # won't be evaluated
+                    con_text, ori_text, label = data[0]  # won't be evaluated
                     index += 1
                 else: 
-                    con_text, con_type, ori_text, ori_type, label = data[index]
+                    # con_text, con_type, ori_text, ori_type, label = data[index]
+                    con_text, ori_text, label = data[index]
                     index += 1
             
             
@@ -107,11 +114,11 @@ class ProcessData:
             # no_context, plain, mention, reply, quote   --> 0, 1, 2, 3, 4  for context
             #    retweet, plain, mention, reply, quote   --> 0(5), 1, 2, 3, 4  for original
 
-            ori_type_np = np.zeros( 5, dtype=np.float32 )
-            ori_type_np[ori_type] = 1
+            # ori_type_np = np.zeros( 5, dtype=np.float32 )
+            # ori_type_np[ori_type] = 1
             
-            con_type_np = np.zeros( 5, dtype=np.float32 )
-            con_type_np[con_type%5] = 1
+            # con_type_np = np.zeros( 5, dtype=np.float32 )
+            # con_type_np[con_type%5] = 1
             
                 
             # find the seqN
@@ -135,14 +142,15 @@ class ProcessData:
                     con_seqN = 1
                                 
             con_texts.append( con_text[:encoder_size] )
-            con_types.append( con_type_np )
+            # con_types.append( con_type_np )
             con_seqs.append( con_seqN )
             
             ori_texts.append( ori_text[:encoder_size] )
-            ori_types.append( ori_type_np )
+            # ori_types.append( ori_type_np )
             ori_seqs.append( ori_seqN )
             
             labels.append( label )
             
-        return con_texts, con_seqs, con_types, ori_texts, ori_seqs, ori_types, labels
+        # return con_texts, con_seqs, con_types, ori_texts, ori_seqs, ori_types, labels
+        return con_texts, con_seqs, ori_texts, ori_seqs, labels
     

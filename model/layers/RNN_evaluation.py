@@ -42,7 +42,8 @@ def run_test(sess, model, batch_gen, data):
     # evaluate data ( N of chunk (batch_size) + remaining( +1) )
     for test_itr in range( max_loop + 1 ):
         
-        raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_type_con, raw_encoder_input_ori, raw_encoder_seq_ori, raw_encoder_type_ori, raw_label = batch_gen.get_batch(
+        # raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_type_con, raw_encoder_input_ori, raw_encoder_seq_ori, raw_encoder_type_ori, raw_label = batch_gen.get_batch(
+        raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_input_ori, raw_encoder_seq_ori, raw_label = batch_gen.get_batch(
                                         data=data,
                                         batch_size=model.batch_size,
                                         encoder_size=model.encoder_size,
@@ -55,11 +56,11 @@ def run_test(sess, model, batch_gen, data):
 
         input_feed[model.encoder_inputs_c] = raw_encoder_input_con
         input_feed[model.encoder_seq_c] = raw_encoder_seq_con
-        input_feed[model.encoder_type_c] = raw_encoder_type_con
+        # input_feed[model.encoder_type_c] = raw_encoder_type_con
 
         input_feed[model.encoder_inputs_o] = raw_encoder_input_ori
         input_feed[model.encoder_seq_o] = raw_encoder_seq_ori
-        input_feed[model.encoder_type_o] = raw_encoder_type_ori
+        # input_feed[model.encoder_type_o] = raw_encoder_type_ori
         
         input_feed[model.y_labels] = raw_label
         

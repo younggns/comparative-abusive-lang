@@ -18,7 +18,8 @@ from layers.RNN_params import Params
 
 # for training         
 def train_step(sess, model, batch_gen):
-    raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_type_con, raw_encoder_input_ori, raw_encoder_seq_ori, raw_encoder_type_ori, raw_label = batch_gen.get_batch(
+    # raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_type_con, raw_encoder_input_ori, raw_encoder_seq_ori, raw_encoder_type_ori, raw_label = batch_gen.get_batch(
+    raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_input_ori, raw_encoder_seq_ori, raw_label = batch_gen.get_batch(
                                         data=batch_gen.train_set,
                                         batch_size=model.batch_size,
                                         encoder_size=model.encoder_size,                                        
@@ -30,11 +31,11 @@ def train_step(sess, model, batch_gen):
     
     input_feed[model.encoder_inputs_c] = raw_encoder_input_con
     input_feed[model.encoder_seq_c] = raw_encoder_seq_con
-    input_feed[model.encoder_type_c] = raw_encoder_type_con
+    # input_feed[model.encoder_type_c] = raw_encoder_type_con
 
     input_feed[model.encoder_inputs_o] = raw_encoder_input_ori
     input_feed[model.encoder_seq_o] = raw_encoder_seq_ori
-    input_feed[model.encoder_type_o] = raw_encoder_type_ori
+    # input_feed[model.encoder_type_o] = raw_encoder_type_ori
     
     input_feed[model.y_labels] = raw_label
     
@@ -78,7 +79,7 @@ def train_model(model, batch_gen, num_train_steps, valid_freq, is_save=0, graph_
         test_f1_at_best_dev = 0
         test_zip_at_best_dev = None
         
-        for index in xrange(num_train_steps):
+        for index in range(num_train_steps):
 
             try:
                 # run train 
@@ -181,7 +182,8 @@ def main(data_path, batch_size, encoder_size, num_layer, hidden_dim,
          num_train_steps, lr, is_save, graph_dir_name,
          use_glove,
          dr,
-         o_type, c_text, c_type,
+         # o_type, c_text, c_type,
+         c_text,
          attn, ltc
          ):
     
@@ -204,9 +206,9 @@ def main(data_path, batch_size, encoder_size, num_layer, hidden_dim,
                             lr=lr,
                             hidden_dim=hidden_dim,                            
                             dr = dr,
-                            o_type = o_type,
-                            c_text = c_text,
-                            c_type = c_type,
+                            # o_type = o_type,
+                            # c_text = c_text,
+                            # c_type = c_type,
                             attn = attn,
                             ltc = ltc
                             )
@@ -236,9 +238,9 @@ if __name__ == '__main__':
     p.add_argument('--use_glove', type=int, default=0)
     p.add_argument('--dr', type=float, default=1.0)
     
-    p.add_argument('--o_type', type=int, default=0)
+    # p.add_argument('--o_type', type=int, default=0)
     p.add_argument('--c_text', type=int, default=0)
-    p.add_argument('--c_type', type=int, default=0)
+    # p.add_argument('--c_type', type=int, default=0)
     
     p.add_argument('--attn', type=int, default=0)
     p.add_argument('--ltc', type=int, default=0)
@@ -249,6 +251,8 @@ if __name__ == '__main__':
     if Params.EMBEDDING_TRAIN == False:
         embed_train = 'F'
     
+    # graph_name = args.graph_prefix + '_b' + str(args.batch_size) + '_es' + str(args.encoder_size) + '_L' + str(args.num_layer) + '_H' + str(args.hidden_dim) + '_G' + str(args.use_glove) + embed_train + '_dr' + str(args.dr) + '_o_type' + str(args.o_type) + '_c_text' + str(args.c_text) + '_c_type' + str(args.c_type) + '_attn' + str(args.attn) + '_ltc' + str(args.ltc) + '_D' + (args.data_path).split('/')[-2]
+
     graph_name = args.graph_prefix + \
                     '_b' + str(args.batch_size) + \
                     '_es' + str(args.encoder_size) + \
@@ -256,9 +260,7 @@ if __name__ == '__main__':
                     '_H' + str(args.hidden_dim) + \
                     '_G' + str(args.use_glove) + embed_train + \
                     '_dr' + str(args.dr) + \
-                    '_o_type' + str(args.o_type) + \
                     '_c_text' + str(args.c_text) + \
-                    '_c_type' + str(args.c_type) + \
                     '_attn' + str(args.attn) + \
                     '_ltc' + str(args.ltc) + \
                     '_D' + (args.data_path).split('/')[-2]
@@ -277,9 +279,9 @@ if __name__ == '__main__':
         graph_dir_name=graph_name,
         use_glove=args.use_glove,
         dr=args.dr,
-        o_type=args.o_type,
+        # o_type=args.o_type,
         c_text=args.c_text,
-        c_type=args.c_type,
+        # c_type=args.c_type,
         attn=args.attn,
         ltc=args.ltc
         )

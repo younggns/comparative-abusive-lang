@@ -22,7 +22,8 @@ class SingleEncoderModelBiSingle:
                  num_layer, lr,
                  hidden_dim,
                  dr,
-                 o_type, c_text, c_type,
+                 # o_type, c_text, c_type,
+                 c_text,
                  attn, ltc,
                  dbias
                 ):
@@ -36,9 +37,9 @@ class SingleEncoderModelBiSingle:
         self.hidden_dim = hidden_dim
         self.dr = dr
         
-        self.o_type = o_type
+        # self.o_type = o_type
         self.c_text = c_text
-        self.c_type = c_type
+        # self.c_type = c_type
         
         self.attn = attn
         self.ltc = ltc
@@ -74,11 +75,11 @@ class SingleEncoderModelBiSingle:
             
             self.encoder_inputs_o  = tf.placeholder(tf.int32, shape=[self.batch_size, self.encoder_size], name="encoder_o")  # [batch,time_step]
             self.encoder_seq_o     = tf.placeholder(tf.int32, shape=[self.batch_size], name="encoder_seq_o")   # [batch] - valid word step
-            self.encoder_type_o    = tf.placeholder(tf.float32, shape=[self.batch_size, 5], name="encoder_type_o")   # [batch] - tweet type 0-5
+            # self.encoder_type_o    = tf.placeholder(tf.float32, shape=[self.batch_size, 5], name="encoder_type_o")   # [batch] - tweet type 0-5
             
             self.encoder_inputs_c  = tf.placeholder(tf.int32, shape=[self.batch_size, self.encoder_size], name="encoder_c")  # [batch,time_step]
             self.encoder_seq_c     = tf.placeholder(tf.int32, shape=[self.batch_size], name="encoder_seq_c")   # [batch] - valid word step
-            self.encoder_type_c    = tf.placeholder(tf.float32, shape=[self.batch_size, 5], name="encoder_type_c")   # [batch] - tweet type 0-5
+            # self.encoder_type_c    = tf.placeholder(tf.float32, shape=[self.batch_size, 5], name="encoder_type_c")   # [batch] - tweet type 0-5
             
             self.y_labels        = tf.placeholder(tf.float32, shape=[self.batch_size, Params.N_CATEGORY], name="label")
             
@@ -313,20 +314,20 @@ class SingleEncoderModelBiSingle:
             
     
             
-    def _add_type_original(self):
-        print ('[launch-text] add tweet type for original')
+    # def _add_type_original(self):
+    #     print ('[launch-text] add tweet type for original')
         
-        # result merge
-        self.final_encoder = tf.concat( [self.final_encoder, self.encoder_type_o], 1 )
-        self.final_encoder_dimension = self.final_encoder_dimension + 5
+    #     # result merge
+    #     self.final_encoder = tf.concat( [self.final_encoder, self.encoder_type_o], 1 )
+    #     self.final_encoder_dimension = self.final_encoder_dimension + 5
             
         
-    def _add_type_context(self):
-        print ('[launch-text] add tweet type for context')       
+    # def _add_type_context(self):
+    #     print ('[launch-text] add tweet type for context')       
         
-        # result merge
-        self.final_encoder = tf.concat( [self.final_encoder, self.encoder_type_c], 1 )
-        self.final_encoder_dimension = self.final_encoder_dimension + 5
+    #     # result merge
+    #     self.final_encoder = tf.concat( [self.final_encoder, self.encoder_type_c], 1 )
+    #     self.final_encoder_dimension = self.final_encoder_dimension + 5
         
         
         
@@ -419,9 +420,9 @@ class SingleEncoderModelBiSingle:
         
         self._add_ff_layer()
         
-        if self.o_type: self._add_type_original()
+        # if self.o_type: self._add_type_original()
         if self.c_text: self._add_context_gru()
-        if self.c_type: self._add_type_context()
+        # if self.c_type: self._add_type_context()
         
         #if self.attn: self._add_attn_self()
         if self.attn: self._add_attn_con()
