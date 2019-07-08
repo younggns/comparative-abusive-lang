@@ -15,7 +15,7 @@ pip3 install -r requirements.txt
 ![alt text](workflow.png)
 
 ## Ready Your Dataset
-We did not provide the code for crawling text data. However, you can ready your dataset by creating **crawled_data.pkl** file in [./data](./data) directory. While creating the pickle file, you will need to create a python dictionary with the following structure: *_dict[_id] = [tweet_label, tweet_text, context_text]*. Then, use *pickle.dump* function to save the dictionary to **crawled_data.pkl** file. (Please refer to the paper to figure out how we defined *context tweet*. If your dataset does not have context, fill '' as the third element of each dictionary.)
+We do not provide the code for crawling text data. However, you can ready your dataset by creating **crawled_data.pkl** file in [./data](./data) directory. While creating the pickle file, you will need to create a python dictionary with the following structure: *_dict[_id] = [tweet_label, tweet_text, context_text]*. Then, use *pickle.dump* function to save the dictionary to **crawled_data.pkl** file. (Please refer to the paper to figure out how we defined *context tweet*. If your dataset does not have context, fill '' as the third element of each dictionary.)
 
 ## Data Preprocessing
 Data preprocessing consists of two steps:
