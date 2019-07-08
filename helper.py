@@ -14,6 +14,8 @@ def str2feature(v):
 		return 'word'
 	elif v in ['char', 'Char', 'CHAR', 'character', 'Character', 'CHARACTER']:
 		return 'char'
+	elif v in ['hybrid', 'Hybrid', 'HYBRID']:
+		return 'hybrid'
 	else:
 		raise argparse.ArgumentTypeError("'word' or 'char' expected.")
 

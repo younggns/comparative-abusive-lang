@@ -1,7 +1,6 @@
 import os
 import sys
 import argparse
-import time
 import pickle
 import numpy as np
 import warnings
@@ -13,10 +12,9 @@ from keras import backend as K
 from keras.models import load_model
 from sklearn.metrics import classification_report
 
-from layers.cnn import WordCNN, WordCNN_Ctxt, CharCNN, HybridCNN
-
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-import helper
+# print(sys.path)
+# import CNN_layers.WordCNN
+from layers.CNN_layers import WordCNN, WordCNN_Ctxt, CharCNN, HybridCNN
 
 class ClassificationReport(Callback):
 	def __init__(self, model, x_eval, y_eval, labels):
@@ -30,6 +28,13 @@ class ClassificationReport(Callback):
 		preds = np.argmax(self.model.predict(self.x_eval, verbose=1), axis=1)
 		print("\n%s\n" % classification_report(self.truth, preds, target_names=self.labels))
 
+def returnLabels():
+	path = os.path.dirname(os.path.abspath(__file__))
+	dataPath = path + "/../../data"
+	with open(dataPath+"/crawled_data.pkl", "rb") as f:
+		id2entities = pickle.load(f)
+	return list(set([entity[0] for entity in id2entities.values()]))
+
 def vector2matrix(text_vector, max_len=140, N_DIM=70):
 	matrix = np.zeros((max_len, N_DIM))
 	for i, index_elem in enumerate(text_vector):
@@ -40,7 +45,7 @@ def vector2matrix(text_vector, max_len=140, N_DIM=70):
 	return matrix
 
 def report_average(report_list):
-	labels = ["normal", "spam", "hateful", "abusive"]
+	labels = returnLabels()
 	output_report_list = list()
 	for report in report_list:
 		splitted = [' '.join(x.split()) for x in report.split('\n\n')]
@@ -66,12 +71,12 @@ def load_word_npys(path, splits, index):
 
 	file_format = path+"/"+str(index)+"/%s_%s.npy"
 	for split in splits: # only save train and valid data
-		file_name = file_format % (split, "CtxtText_InputText")
+		file_name = file_format % ("CtxtText_InputText", split)
 		_CtxtText = np.load(file_name)
 		ctxt_data[split] = _CtxtText[:,:100]
 		text_data[split] = _CtxtText[:,100:]
 
-		file_name = file_format % (split, "Label")
+		file_name = file_format % ("Label", split)
 		label_data[split] = np.load(file_name)
 
 	return text_data, ctxt_data, label_data
@@ -82,47 +87,48 @@ def load_char_npys(path, splits, index):
 
 	file_format = path+"/"+str(index)+"/%s_%s.npy"
 	for split in splits: # only save train and valid data
-		file_name = file_format % (split, "InputText")
+		file_name = file_format % ("Char_InputText", split)
 		_Text = np.load(file_name)
 		text_data[split] = []
 		for _text_vector in _Text:
 			text_data[split].append(vector2matrix(_text_vector))
 		text_data[split] = np.asarray(text_data[split])
 
-		file_name = file_format % (split, "Label")
+		file_name = file_format % ("Label", split)
 		label_data[split] = np.load(file_name)
 
 	return text_data, label_data
 
-def train_word_cnn(use_glove, use_ctxt, kfold_index, batch_size, num_epochs, filter_sizes, num_filters, train_embedding, lr):
-	labels = ["normal", "spam", "hateful", "abusive"]
+def train_word_cnn(use_glove, use_ctxt, kfold_index, batch_size, num_epochs, filter_sizes, num_filters, train_embedding, lr, time_index):
+	
+	labels = returnLabels()
 	splits = ["train", "valid", "test"]
 	model_name = "CNN_WORD"
 	if use_ctxt:
 		model_name += "_CTXT"
 	if use_glove:
 		model_name += "_GLOVE"
-	
+
 	path = os.path.dirname(os.path.abspath(__file__))
-	dataPath_root = path + "/../data/preprocessed/word"
-	
-	with open(dataPath_root+"/vocab.pkl", "rb") as f:
+	dataPath = path + "/../../data"
+	targetPath = dataPath + "/target"
+	with open(targetPath+"/vocab.pkl", "rb") as f:
 		vocab = pickle.load(f)
 		vocab_size = len(vocab["word2id"].keys())
 		print("vocabulary loaded with %s words" % vocab_size)
 
-	embedding_matrix = np.load(dataPath_root+"/embedding.npy")
+	embedding_matrix = np.load(targetPath+"/embedding.npy")
 	assert embedding_matrix.shape[0] == vocab_size
 	print("loaded embedding table")
 
 	K.set_learning_phase(1)
 
-	text_data, ctxt_data, label_data = load_word_npys(dataPath_root, splits[:2], kfold_index)
+	text_data, ctxt_data, label_data = load_word_npys(targetPath, splits[:2], kfold_index)
 
 	sequence_length = text_data["train"].shape[1]
 	print("sequence_length: %s" % sequence_length)
 
-	log_path = path + "/../data/output/word/"+model_name+"/"+str(kfold_index)
+	log_path = dataPath + "/output/"+model_name+"/"+str(time_index)+"/"+str(kfold_index)
 
 	# define keras training procedure
 	tb_callback = TensorBoard(log_dir=log_path, histogram_freq=0, write_graph=True, write_images=True)
@@ -157,24 +163,25 @@ def train_word_cnn(use_glove, use_ctxt, kfold_index, batch_size, num_epochs, fil
 
 	print("Training Finished")
 
-def train_char_cnn(kfold_index, batch_size, num_epochs, filter_sizes, num_filters, train_embedding, lr):
-	labels = ["normal", "spam", "hateful", "abusive"]
+def train_char_cnn(kfold_index, batch_size, num_epochs, filter_sizes, num_filters, train_embedding, lr, time_index):
+	labels = returnLabels()
 	splits = ["train", "valid", "test"]
 	model_name = "CNN_CHAR"
 	
 	path = os.path.dirname(os.path.abspath(__file__))
-	dataPath_root = path + "/../data/preprocessed/char"
+	dataPath = path + "/../../data"
+	targetPath = dataPath + "/target"
 
 	K.set_learning_phase(1)
 
-	text_data, label_data = load_char_npys(dataPath_root, splits[:2], kfold_index)
+	text_data, label_data = load_char_npys(targetPath, splits[:2], kfold_index)
 
 	char_len = text_data["train"].shape[1]
 	char_embed_dim = text_data["train"].shape[2]
 	print("max_char_length: %s" % char_len)
 	print("char_dim: %s" % char_embed_dim)
 
-	log_path = path + "/../data/output/char/"+model_name+"/"+str(kfold_index)
+	log_path = dataPath + "/output/"+model_name+"/"+str(time_index)+"/"+str(kfold_index)
 
 	# define keras training procedure
 	tb_callback = TensorBoard(log_dir=log_path, histogram_freq=0, write_graph=True, write_images=True)
@@ -196,30 +203,30 @@ def train_char_cnn(kfold_index, batch_size, num_epochs, filter_sizes, num_filter
 
 	print("Training Finished")
 
-def train_hybrid_cnn(use_glove, kfold_index, batch_size, num_epochs, filter_sizes_word, num_filters_word, filter_sizes_char, num_filters_char, train_embedding, lr):
-	labels = ["normal", "spam", "hateful", "abusive"]
+def train_hybrid_cnn(use_glove, kfold_index, batch_size, num_epochs, filter_sizes_word, num_filters_word, filter_sizes_char, num_filters_char, train_embedding, lr, time_index):
+	
+	labels = returnLabels()
 	splits = ["train", "valid", "test"]
 	model_name = "CNN_HYBRID"
 	if use_glove:
 		model_name += "_GLOVE"
-	
+
 	path = os.path.dirname(os.path.abspath(__file__))
-	dataPath_root_word = path + "/../data/preprocessed/word"
-	dataPath_root_char = path + "/../data/preprocessed/char"
-	
-	with open(dataPath_root_word+"/vocab.pkl", "rb") as f:
+	dataPath = path + "/../../data"
+	targetPath = dataPath + "/target"
+	with open(targetPath+"/vocab.pkl", "rb") as f:
 		vocab = pickle.load(f)
 		vocab_size = len(vocab["word2id"].keys())
 		print("vocabulary loaded with %s words" % vocab_size)
 
-	embedding_matrix = np.load(dataPath_root_word+"/embedding.npy")
+	embedding_matrix = np.load(targetPath+"/embedding.npy")
 	assert embedding_matrix.shape[0] == vocab_size
 	print("loaded embedding table")
 
 	K.set_learning_phase(1)
 
-	text_data_word, _, label_data = load_word_npys(dataPath_root_word, splits[:2], kfold_index)
-	text_data_char, _ = load_char_npys(dataPath_root_char, splits[:2], kfold_index)
+	text_data_word, _, label_data = load_word_npys(targetPath, splits[:2], kfold_index)
+	text_data_char, _ = load_char_npys(targetPath, splits[:2], kfold_index)
 
 	sequence_length = text_data_word["train"].shape[1]
 	char_len = text_data_char["train"].shape[1]
@@ -228,7 +235,7 @@ def train_hybrid_cnn(use_glove, kfold_index, batch_size, num_epochs, filter_size
 	print("char_dim: %s" % char_embed_dim)
 	print("word_sequence_length: %s" % sequence_length)
 
-	log_path = path + "/../data/output/hybrid/"+model_name+"/"+str(kfold_index)
+	log_path = dataPath + "/output/"+model_name+"/"+str(time_index)+"/"+str(kfold_index)
 
 	# define keras training procedure
 	tb_callback = TensorBoard(log_dir=log_path, histogram_freq=0, write_graph=True, write_images=True)
@@ -238,8 +245,6 @@ def train_hybrid_cnn(use_glove, kfold_index, batch_size, num_epochs, filter_size
 									save_weights_only=False, mode='max', verbose=1)
 
 	early_stop_callback = EarlyStopping(monitor='val_acc', min_delta=0, patience=1, verbose=0, mode='max')
-
-
 
 	model = HybridCNN(n_classes=len(labels),
 			char_len=char_len, char_embed_dim=char_embed_dim, char_filter_sizes=filter_sizes_char, char_num_filters=num_filters_char,
@@ -255,8 +260,8 @@ def train_hybrid_cnn(use_glove, kfold_index, batch_size, num_epochs, filter_size
 
 	print("Training Finished")
 
-def test_word_cnn(use_glove, use_ctxt, k):
-	labels = ["normal", "spam", "hateful", "abusive"]
+def test_word_cnn(use_glove, use_ctxt, k, time_index):
+	labels = returnLabels()
 	text_data_list, ctxt_data_list, label_data_list = [], [], []
 
 	model_name = "CNN_WORD"
@@ -266,18 +271,19 @@ def test_word_cnn(use_glove, use_ctxt, k):
 		model_name += "_GLOVE"
 
 	path = os.path.dirname(os.path.abspath(__file__))
-	dataPath_root = path + "/../data/preprocessed/word"
+	dataPath = path + "/../../data"
+	targetPath = dataPath + "/target"
 
 	text_data_list, ctxt_data_list, label_data_list = [], [], []
 
-	file_format = dataPath_root + "/%s/%s_%s.npy"
+	file_format = targetPath + "/%s/%s_%s.npy"
 	for index in range(k):
-		file_name = file_format % (str(index), "test", "CtxtText_InputText")
+		file_name = file_format % (str(index), "CtxtText_InputText", "test")
 		_CtxtText = np.load(file_name)
 		ctxt_data_list.append(_CtxtText[:,:100])
 		text_data_list.append(_CtxtText[:,100:])
 		
-		file_name = file_format % (str(index), "test", "Label")
+		file_name = file_format % (str(index), "Label", "test")
 		label_data_list.append(np.load(file_name))
 
 	report_list = []
@@ -286,7 +292,7 @@ def test_word_cnn(use_glove, use_ctxt, k):
 		X_ctxt = ctxt_data_list[index]
 		y = label_data_list[index]
 
-		log_path = path + "/../data/output/word/"+model_name+"/"+str(index)
+		log_path = dataPath + "/output/"+model_name+"/"+str(time_index)+"/"+str(index)
 		dir_list = os.listdir(log_path)
 
 		# Find maximum epoch num for each weight output
@@ -312,31 +318,32 @@ def test_word_cnn(use_glove, use_ctxt, k):
 	tot_report = report_average(report_list)
 	print(tot_report)
 
-def test_char_cnn(k):
-	labels = ["normal", "spam", "hateful", "abusive"]
+def test_char_cnn(k, time_index):
+	labels = returnLabels()
 	model_name = "CNN_CHAR"
 
 	path = os.path.dirname(os.path.abspath(__file__))
-	dataPath_root = path + "/../data/preprocessed/char"
+	dataPath = path + "/../../data"
+	targetPath = dataPath + "/target"
 
-	file_format = dataPath_root + "/%s/%s_%s.npy"
+	file_format = targetPath + "/%s/%s_%s.npy"
 	report_list = []
 	for index in range(k):
 		text_data_list = []
-		file_name = file_format % (str(index), "test", "InputText")
+		file_name = file_format % (str(index), "Char_InputText", "test")
 
 		_text_data = np.load(file_name)
 		for text_vector in _text_data:
 			text_data_list.append(vector2matrix(text_vector))
 		text_data = np.asarray(text_data_list)
 		
-		file_name = file_format % (str(index), "test", "Label")
+		file_name = file_format % (str(index), "Label", "test")
 		label_data = np.load(file_name)
 
 		X_orig = text_data
 		y = label_data
 
-		log_path = path + "/../data/output/char/CNN_CHAR/"+str(index)
+		log_path = dataPath + "/output/"+model_name+"/"+str(time_index)+"/"+str(index)
 		dir_list = os.listdir(log_path)
 
 		# Find maximum epoch num for each weight output
@@ -359,8 +366,8 @@ def test_char_cnn(k):
 	tot_report = report_average(report_list)
 	print(tot_report)
 
-def test_hybrid_cnn(use_glove, k):
-	labels = ["normal", "spam", "hateful", "abusive"]
+def test_hybrid_cnn(use_glove, k, time_index):
+	labels = returnLabels()
 	# word_text_data_list, char_text_data_list, label_data_list = [], [], []
 	char_text_data_list = []
 
@@ -369,31 +376,30 @@ def test_hybrid_cnn(use_glove, k):
 		model_name += "_GLOVE"
 
 	path = os.path.dirname(os.path.abspath(__file__))
-	dataPath_root_word = path + "/../data/preprocessed/word"
-	dataPath_root_char = path + "/../data/preprocessed/char"
-
-	word_file_format = dataPath_root_word + "/%s/%s_%s.npy"
-	char_file_format = dataPath_root_char + "/%s/%s_%s.npy"
+	dataPath = path + "/../../data"
+	targetPath = dataPath + "/target"
+	
+	file_format = targetPath + "/%s/%s_%s.npy"
 	report_list = []
 	for index in range(k):
-		file_name = char_file_format % (str(index), "test", "InputText")
+		file_name = file_format % (str(index), "Char_InputText", "test")
 		_char_text_data = np.load(file_name)
 	
 		for text_vector in _char_text_data:
 			char_text_data_list.append(vector2matrix(text_vector))
 		char_text_data = np.asarray(char_text_data_list)
 
-		file_name = word_file_format % (str(index), "test", "CtxtText_InputText")
+		file_name = file_format % (str(index), "CtxtText_InputText", "test")
 		word_text_data = np.load(file_name)[:,100:]
 		
-		file_name = word_file_format % (str(index), "test", "Label")
+		file_name = file_format % (str(index), "Label", "test")
 		label_data = np.load(file_name)
 
 		X_word = word_text_data
 		X_char = char_text_data
 		y = label_data
 
-		log_path = path + "/../data/output/hybrid/"+model_name+"/"+str(index)
+		log_path = dataPath + "/output/"+model_name+"/"+str(time_index)+"/"+str(index)
 		dir_list = os.listdir(log_path)
 
 		# Find maximum epoch num for each weight output

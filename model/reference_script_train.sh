@@ -1,4 +1,3 @@
-
 ###########################################
 # RNN-LTC (word-level)
 # each encoder_size = 100 

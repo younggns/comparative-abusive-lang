@@ -10,6 +10,9 @@ The following script will install required Python packages.
 pip3 install -r requirements.txt
 ```
 
+## Workflow Diagram
+![alt text](workflow.png)
+
 ## Data Preprocessing
 Data preprocessing consists of three steps:
 1. Download the source data (*Hate and Abusive Speech on Twitter*). The dataset's each row is consisted of a tweet ID and its annotation. 

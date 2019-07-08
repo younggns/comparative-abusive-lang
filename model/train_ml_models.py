@@ -20,21 +20,17 @@ import functools
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 import helper
+import time
 
-################################################
-labels = ["normal", "spam", "hateful", "abusive"]
-################################################
-
-def train(feature_level, n_gram_tuple, max_feature_length, classifier):
+def train(feature_level, n_gram_tuple, max_feature_length, classifier, output_path, k):
 	splits = ["train", "valid", "test"]
 
 	path = os.path.dirname(os.path.abspath(__file__))
-	with open(path+"/../data/preprocessed/"+feature_level+"/data_splits.pkl", "rb") as f:
+	with open(path+"/../data/data_splits.pkl", "rb") as f:
 		_data = pickle.load(f)
 
-	for index in range(10):
+	for index in range(k):
 		print("Fold number:",str(index))
-		output_path = path + "/../data/output/"+feature_level+"/"+classifier+"/"+str(index)
 
 		_text_data = _data["text_data"][index]
 		_label_data = _data["label_data"][index]
@@ -77,16 +73,14 @@ def train(feature_level, n_gram_tuple, max_feature_length, classifier):
 		print("Output prediction on test data....")
 		pred_scores = text_clf.predict_proba(text_data["test"])
 
-		if not os.path.exists(output_path):
-			os.makedirs(output_path)
-
-		with open(output_path+"/pred_output.pkl", "wb") as f:
-			print("Writing prediction output pickle files to ../data/output/"+feature_level+"/"+classifier+"/"+str(index))
+		with open(output_path+"/pred_output_"+str(index)+".pkl", "wb") as f:
+			print("Writing prediction output pickle files....")
 			pickle.dump({"pred_scores": pred_scores, "labels": label_data["test"]}, f)
 
 	print("Done training.")
 
-def report_average(report_list):
+def report_average(report_list, labels):
+
 	output_report_list = list()
 	for report in report_list:
 		splitted = [' '.join(x.split()) for x in report.split('\n\n')]
@@ -105,14 +99,13 @@ def report_average(report_list):
 	metric_labels = labels + ['avg / total']
 	return res.rename(index={res.index[idx]: metric_labels[idx] for idx in range(len(res.index))})
 
-def evaluate(feature_level, classifier):
+def evaluate(feature_level, classifier, output_path, k, labels):
 	path = os.path.dirname(os.path.abspath(__file__))
 	report_list = []
 
-	for index in range(10):
-		output_path = path + "/../data/output/"+feature_level+"/"+classifier+"/"+str(index)
+	for index in range(k):
 
-		with open(output_path+"/pred_output.pkl", "rb") as f:
+		with open(output_path+"/pred_output_"+str(index)+".pkl", "rb") as f:
 			_data = pickle.load(f)
 
 		preds, target = _data["pred_scores"], _data["labels"]
@@ -123,7 +116,7 @@ def evaluate(feature_level, classifier):
 			_report = classification_report(target, pred_np, digits=4, target_names=labels)
 		report_list.append(_report)
 
-	tot_report = report_average(report_list)
+	tot_report = report_average(report_list, labels)
 	print(tot_report)
 
 if __name__ == "__main__":
@@ -131,6 +124,7 @@ if __name__ == "__main__":
 
 	parser.add_argument("--feature_level", type=helper.str2feature, default='word')
 	parser.add_argument("--clf", type=helper.str2clfs, required=True)
+	parser.add_argument("--num_splits", type=int, default=10)
 
 	args = vars(parser.parse_args())
 	
@@ -138,6 +132,18 @@ if __name__ == "__main__":
 	ngram_range = helper.str2ngrams(ngram_range_str)
 	max_features = input("{:25}".format("max number of features:"))
 
-	train(args["feature_level"], ngram_range, int(max_features), args["clf"])
+	path = os.path.dirname(os.path.abspath(__file__))
+	model_name = args['clf']+'_'+args["feature_level"]
+	output_path = path + "/../data/output/"+model_name+"/"+str(int(time.time()))
+	if not os.path.exists(output_path):
+		os.makedirs(output_path)
+
+	data_path = os.path.dirname(os.path.abspath(__file__)) + "/../data/"
+	with open(data_path+"crawled_data.pkl", "rb") as f:
+		id2entities = pickle.load(f)
+
+	labels = list(set([entity[0] for entity in id2entities.values()]))
+
+	train(args["feature_level"], ngram_range, int(max_features), args["clf"], output_path, args["num_splits"])
 	print("Evaluating the test results...")
-	evaluate(args["feature_level"], args["clf"])
+	evaluate(args["feature_level"], args["clf"], output_path, args["num_splits"], labels)
