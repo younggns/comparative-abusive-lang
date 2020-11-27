@@ -6,6 +6,7 @@ import time
 from datetime import datetime
 import pickle
 import numpy as np
+from transformers import BertTokenizer
 
 from collections import Counter
 
