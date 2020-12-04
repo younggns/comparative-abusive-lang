@@ -176,7 +176,7 @@ class SingleEncoderModelBi:
         print('[launch-model_util] apply self-matching for origianl text')
 
         # Apply gated attention recurrent network for both query-passage matching and self matching networks
-        with tf.variable_scope("self-matching"):
+        with tf.compat.v1.variable_scope("self-matching"):
 
             self.params = get_attn_params(
                 self.final_encoder_dimension/2, initializer=tf.nn.conv2d)

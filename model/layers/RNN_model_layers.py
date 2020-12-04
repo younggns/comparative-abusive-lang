@@ -31,7 +31,7 @@ def get_attn_params(attn_size, initializer=truncated_normal_initializer):
     Returns:
         params: A collection of parameters used throughout the layers
     '''
-    with tf.variable_scope("attention_weights"):
+    with tf.compat.v1.variable_scope("attention_weights"):
         params = {
             # 0 case "W_u_Q":tf.get_variable("W_u_Q",dtype = tf.float32, shape = (2 * attn_size, attn_size), initializer = initializer()),
             # "W_ru_Q":tf.get_variable("W_ru_Q",dtype = tf.float32, shape = (2 * attn_size, 2 * attn_size), initializer = initializer()),
@@ -76,7 +76,7 @@ def bidirectional_GRU(inputs, inputs_len, cell=None, cell_fn=GRUCell, units=0, l
         cell:       rnn cell of type RNN_Cell.
         output:     [ batch, step, dim (fw;bw) ], [ batch, dim (fw;bw) ]
     '''
-    with tf.variable_scope(scope, reuse=reuse, initializer=tf.orthogonal_initializer()):
+    with tf.compat.v1.variable_scope(scope, reuse=reuse, initializer=tf.orthogonal_initializer()):
         if cell is not None:
             (cell_fw, cell_bw) = cell
         else:
@@ -131,7 +131,7 @@ def bidirectional_GRU(inputs, inputs_len, cell=None, cell_fn=GRUCell, units=0, l
 
 
 def attention_rnn(inputs, inputs_len, units, attn_cell, bidirection=True, scope="gated_attention_rnn", is_training=True, dr_prob=1.0, is_bidir=False):
-    with tf.variable_scope(scope):
+    with tf.compat.v1.variable_scope(scope):
         if bidirection:
             outputs, last_states = bidirectional_GRU(
                 inputs=inputs,
@@ -155,7 +155,7 @@ def attention_rnn(inputs, inputs_len, units, attn_cell, bidirection=True, scope=
 
 
 def gated_attention(memory, inputs, states, units, params, self_matching=False, memory_len=None, scope="gated_attention", batch_size=0):
-    with tf.variable_scope(scope):
+    with tf.compat.v1.variable_scope(scope):
         weights, W_g = params
         inputs_ = [memory, inputs]
         states = tf.reshape(states, (int(batch_size), int(units)))
@@ -178,7 +178,7 @@ def mask_attn_score(score, memory_sequence_length, score_mask_value=-1e8):
 
 
 def attention(inputs, units, weights, scope="attention", memory_len=None, reuse=None, batch_size=0):
-    with tf.variable_scope(scope, reuse=reuse):
+    with tf.compat.v1.variable_scope(scope, reuse=reuse):
         outputs_ = []
         weights, v = weights
         for i, (inp, w) in enumerate(zip(inputs, weights)):

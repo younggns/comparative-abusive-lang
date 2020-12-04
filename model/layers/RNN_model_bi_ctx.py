@@ -137,7 +137,7 @@ class SingleEncoderModelBiSingle:
 
         with tf.name_scope('text_RNN') as scope:
 
-            with tf.variable_scope("text_GRU", reuse=False, initializer=tf.orthogonal_initializer()):
+            with tf.compat.v1.variable_scope("text_GRU", reuse=False, initializer=tf.orthogonal_initializer()):
 
                 cells_en_fw = MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
@@ -203,7 +203,7 @@ class SingleEncoderModelBiSingle:
 
         with tf.name_scope('text_RNN') as scope:
 
-            with tf.variable_scope("text_GRU", reuse=True, initializer=tf.orthogonal_initializer()):
+            with tf.compat.v1.variable_scope("text_GRU", reuse=True, initializer=tf.orthogonal_initializer()):
 
                 cells_en_fw_c = MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
@@ -232,7 +232,7 @@ class SingleEncoderModelBiSingle:
 
         with tf.name_scope('text_RNN') as scope:
 
-            with tf.variable_scope("text_GRU", reuse=True, initializer=tf.orthogonal_initializer()):
+            with tf.compat.v1.variable_scope("text_GRU", reuse=True, initializer=tf.orthogonal_initializer()):
 
                 cells_en_fw_c = MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
