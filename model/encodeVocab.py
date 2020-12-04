@@ -29,6 +29,14 @@ class EmbeddingMode(Enum):
         else:
             return EmbeddingMode.OTHER
 
+    def __str__(self):
+        if self == EmbeddingMode.GLOVE:
+            return 'glove'
+        elif self == EmbeddingMode.BERT:
+            return 'bert'
+        elif self == EmbeddingMode.OTHER:
+            return 'other'
+
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 ###################################################################################
@@ -128,6 +136,8 @@ def genWordVocab(text_data, context_data, k):
 
 
 def genWordEmbeddings(mode: EmbeddingMode, path):
+
+    print(f'Mode: {mode}')
 
     embedding_dim = 300
     with open(path+"/vocab.pkl", "rb") as f:
