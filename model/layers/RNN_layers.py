@@ -8,7 +8,7 @@ from tensorflow.compat.v1.nn.rnn_cell import DropoutWrapper, ResidualWrapper, Mu
 
 # cell instance
 def gru_cell(hidden_dim):
-    return tf.contrib.rnn.GRUCell(num_units=hidden_dim)
+    return GRUCell(num_units=hidden_dim)
 
 # cell instance with drop-out wrapper applied
 
@@ -16,12 +16,12 @@ def gru_cell(hidden_dim):
 def drop_out_cell(hidden_dim=None, dr_in=1.0, dr_out=1.0, is_residual=False):
     if is_residual:
         print('residual connection')
-        return tf.contrib.rnn.ResidualWrapper(tf.contrib.rnn.DropoutWrapper(gru_cell(hidden_dim), input_keep_prob=dr_in, output_keep_prob=dr_out))
+        return ResidualWrapper(DropoutWrapper(gru_cell(hidden_dim), input_keep_prob=dr_in, output_keep_prob=dr_out))
     else:
-        return tf.contrib.rnn.DropoutWrapper(gru_cell(hidden_dim), input_keep_prob=dr_in, output_keep_prob=dr_out)
+        return DropoutWrapper(gru_cell(hidden_dim), input_keep_prob=dr_in, output_keep_prob=dr_out)
 
 
-def add_GRU(inputs, inputs_len, cell=None, cell_fn=tf.contrib.rnn.GRUCell, hidden_dim=100, layers=1, scope="add_GRU", output=0, is_training=True, reuse=None, dr_input_keep_prob=1.0, dr_output_keep_prob=1.0, is_bidir=False, is_bw_reversed=False, is_residual=False):
+def add_GRU(inputs, inputs_len, cell=None, cell_fn=GRUCell, hidden_dim=100, layers=1, scope="add_GRU", output=0, is_training=True, reuse=None, dr_input_keep_prob=1.0, dr_output_keep_prob=1.0, is_bidir=False, is_bw_reversed=False, is_residual=False):
     '''
     Bidirectional recurrent neural network with GRU cells.
 

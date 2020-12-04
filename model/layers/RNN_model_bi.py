@@ -178,7 +178,7 @@ class SingleEncoderModelBi:
         with tf.variable_scope("self-matching"):
 
             self.params = get_attn_params(
-                self.final_encoder_dimension/2, initializer=tf.contrib.layers.xavier_initializer)
+                self.final_encoder_dimension/2, initializer=tf.nn.conv2d)
 
             memory = self.final_encoding
             inputs = self.final_encoding
@@ -251,13 +251,13 @@ class SingleEncoderModelBi:
 
         with tf.name_scope('text_FF') as scope:
 
-            initializers = tf.contrib.layers.xavier_initializer(
+            initializers = tf.nn.conv2d(
                 uniform=True,
                 seed=None,
                 dtype=tf.float32
             )
 
-            self.final_step = tf.contrib.layers.fully_connected(
+            self.final_step = tf.keras.layers.Dense(
                 inputs=self.final_step,
                 num_outputs=Params.DIM_FF_LAYER,
                 activation_fn=tf.nn.tanh,

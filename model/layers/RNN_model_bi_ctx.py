@@ -5,8 +5,7 @@ what    : Single Encoder Model - bidirectional
 data    : twitter
 """
 import tensorflow as tf
-from tensorflow.compat import rnn
-from tensorflow.compat.v1.nn.rnn_cell import DropoutWrapper
+from tensorflow.compat.v1.nn.rnn_cell import DropoutWrapper, GRUCell, MultiRNNCell
 
 from tensorflow.core.framework import summary_pb2
 from random import shuffle
@@ -121,34 +120,12 @@ class SingleEncoderModelBiSingle:
     # cell instance
 
     def gru_cell(self):
-        return tf.contrib.rnn.GRUCell(num_units=self.hidden_dim)
+        return GRUCell(num_units=self.hidden_dim)
 
     # cell instance with drop-out wrapper applied
 
     def gru_drop_out_cell(self):
-        return tf.contrib.rnn.DropoutWrapper(self.gru_cell(), input_keep_prob=self.dr_prob, output_keep_prob=self.dr_prob)
-
-    """
-    def _create_gru_model(self):
-        print '[launch-text] create gru cell'
-
-        with tf.name_scope('text_RNN') as scope:
-        
-            with tf.variable_scope("text_GRU", reuse=False, initializer=tf.orthogonal_initializer()):
-                
-                cells_en = tf.contrib.rnn.MultiRNNCell( [ self.gru_drop_out_cell() for _ in range(self.num_layers) ] )
-
-                (self.outputs_en, last_states_en) = tf.nn.dynamic_rnn(
-                                                    cell=cells_en,
-                                                    inputs= self.embed_en_o,
-                                                    dtype=tf.float32,
-                                                    sequence_length=self.encoder_seq_o,
-                                                    time_major=False)
-                
-                self.final_encoder = last_states_en[-1]
-                
-        self.final_encoder_dimension   = self.hidden_dim
-        """
+        return DropoutWrapper(self.gru_cell(), input_keep_prob=self.dr_prob, output_keep_prob=self.dr_prob)
 
     def _create_gru_model_bi(self):
         print('[launch-text] create gru cell for original data - bidirectional')
@@ -157,9 +134,9 @@ class SingleEncoderModelBiSingle:
 
             with tf.variable_scope("text_GRU", reuse=False, initializer=tf.orthogonal_initializer()):
 
-                cells_en_fw = tf.contrib.rnn.MultiRNNCell(
+                cells_en_fw = MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
-                cells_en_bw = tf.contrib.rnn.MultiRNNCell(
+                cells_en_bw = MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
 
                 (self.outputs_o, output_states) = tf.nn.bidirectional_dynamic_rnn(
@@ -223,9 +200,9 @@ class SingleEncoderModelBiSingle:
 
             with tf.variable_scope("text_GRU", reuse=True, initializer=tf.orthogonal_initializer()):
 
-                cells_en_fw_c = tf.contrib.rnn.MultiRNNCell(
+                cells_en_fw_c = MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
-                cells_en_bw_c = tf.contrib.rnn.MultiRNNCell(
+                cells_en_bw_c = MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
 
                 (self.outputs_c, output_states) = tf.nn.bidirectional_dynamic_rnn(
@@ -252,9 +229,9 @@ class SingleEncoderModelBiSingle:
 
             with tf.variable_scope("text_GRU", reuse=True, initializer=tf.orthogonal_initializer()):
 
-                cells_en_fw_c = tf.contrib.rnn.MultiRNNCell(
+                cells_en_fw_c = MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
-                cells_en_bw_c = tf.contrib.rnn.MultiRNNCell(
+                cells_en_bw_c = MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
 
                 (self.outputs_c, output_states) = tf.nn.bidirectional_dynamic_rnn(
@@ -298,23 +275,23 @@ class SingleEncoderModelBiSingle:
 
         with tf.name_scope('text_FF') as scope:
 
-            initializers = tf.contrib.layers.xavier_initializer(
+            initializers = tf.nn.conv2d(
                 uniform=True,
                 seed=None,
                 dtype=tf.float32
             )
 
-            self.final_encoder = tf.contrib.layers.fully_connected(inputs=self.final_encoder,
-                                                                   num_outputs=Params.DIM_FF_LAYER,
-                                                                   activation_fn=tf.nn.relu,
-                                                                   normalizer_fn=None,
-                                                                   normalizer_params=None,
-                                                                   weights_initializer=initializers,
-                                                                   weights_regularizer=None,
-                                                                   biases_initializer=tf.zeros_initializer(),
-                                                                   biases_regularizer=None,
-                                                                   trainable=True
-                                                                   )
+            self.final_encoder = tf.keras.layers.Dense(inputs=self.final_encoder,
+                                                       num_outputs=Params.DIM_FF_LAYER,
+                                                       activation_fn=tf.nn.relu,
+                                                       normalizer_fn=None,
+                                                       normalizer_params=None,
+                                                       weights_initializer=initializers,
+                                                       weights_regularizer=None,
+                                                       biases_initializer=tf.zeros_initializer(),
+                                                       biases_regularizer=None,
+                                                       trainable=True
+                                                       )
 
             self.final_encoder_dimension = Params.DIM_FF_LAYER
 

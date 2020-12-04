@@ -4,7 +4,8 @@
 import tensorflow as tf
 import numpy as np
 
-from tensorflow.compat.v1.nn.rnn_cell import MultiRNNCell, RNNCell
+from tensorflow.compat.v1 import truncated_normal_initializer
+from tensorflow.compat.v1.nn.rnn_cell import MultiRNNCell, RNNCell, GRUCell
 from layers.RNN_params import Params
 
 #from zoneout import ZoneoutWrapper
@@ -21,7 +22,7 @@ W_v^Q.shape:    (attn_size, attn_size)
 '''
 
 
-def get_attn_params(attn_size, initializer=tf.truncated_normal_initializer):
+def get_attn_params(attn_size, initializer=truncated_normal_initializer):
     '''
     Args:
         attn_size: the size of attention specified in https://www.microsoft.com/en-us/research/wp-content/uploads/2017/05/r-net.pdf
@@ -55,17 +56,17 @@ def apply_dropout(inputs, size=None, is_training=True, input_keep_prob=1.0, outp
     # if Params.zoneout is not None:
     #    return ZoneoutWrapper(inputs, state_zoneout_prob= Params.zoneout, is_training = is_training)
     elif is_training:
-        return tf.contrib.rnn.DropoutWrapper(inputs,
-                                             input_keep_prob=input_keep_prob,
-                                             output_keep_prob=output_keep_prob,
-                                             # variational_recurrent = True,
-                                             # input_size = size,
-                                             dtype=tf.float32)
+        return DropoutWrapper(inputs,
+                              input_keep_prob=input_keep_prob,
+                              output_keep_prob=output_keep_prob,
+                              # variational_recurrent = True,
+                              # input_size = size,
+                              dtype=tf.float32)
     else:
         return inputs
 
 
-def bidirectional_GRU(inputs, inputs_len, cell=None, cell_fn=tf.contrib.rnn.GRUCell, units=0, layers=1, scope="Bidirectional_GRU", output=0, is_training=True, reuse=None, dr_input_keep_prob=1.0, dr_output_keep_prob=1.0, is_bidir=False):
+def bidirectional_GRU(inputs, inputs_len, cell=None, cell_fn=GRUCell, units=0, layers=1, scope="Bidirectional_GRU", output=0, is_training=True, reuse=None, dr_input_keep_prob=1.0, dr_output_keep_prob=1.0, is_bidir=False):
     '''
     Bidirectional recurrent neural network with GRU cells.
 
@@ -185,7 +186,7 @@ def attention(inputs, units, weights, scope="attention", memory_len=None, reuse=
             inp = tf.reshape(inp, (-1, shapes[-1]))
             if w is None:
                 w = tf.get_variable("w_%d" % i, dtype=tf.float32, shape=[
-                                    shapes[-1], units], initializer=tf.contrib.layers.xavier_initializer())
+                                    shapes[-1], units], initializer=tf.nn.conv2d())
             outputs = tf.matmul(inp, w)
             # Hardcoded attention output reshaping. Equation (4), (8), (9) and (11) in the original paper.
             if len(shapes) > 2:
@@ -198,7 +199,7 @@ def attention(inputs, units, weights, scope="attention", memory_len=None, reuse=
         outputs = sum(outputs_)
 
         b = tf.get_variable(
-            "b", shape=outputs.shape[-1], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer())
+            "b", shape=outputs.shape[-1], dtype=tf.float32, initializer=tf.nn.conv2d())
         outputs += b
 
         scores = tf.reduce_sum(tf.tanh(outputs) * v, [-1])
