@@ -19,7 +19,7 @@ class EmbeddingMode(Enum):
     OTHER = auto()
 
     @classmethod
-    def fromStr(cls, string: str) -> EmbeddingMode:
+    def fromStr(cls, string: str):
         lowered_string = string.lower()
 
         if lowered_string == 'glove':
