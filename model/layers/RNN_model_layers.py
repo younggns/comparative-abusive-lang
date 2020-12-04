@@ -102,7 +102,7 @@ def bidirectional_GRU(inputs, inputs_len, cell=None, cell_fn=GRUCell, units=0, l
                         cell_fn(units), size=inputs.shape[-1], is_training=is_training)
 
         if is_bidir:
-            outputs, states = tf.nn.bidirectional_dynamic_rnn(
+            outputs, states = tf.compat.v1.nn.bidirectional_dynamic_rnn(
                 cell_fw=cell_fw,
                 cell_bw=cell_bw,
                 inputs=inputs,

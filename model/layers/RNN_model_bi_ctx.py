@@ -144,7 +144,7 @@ class SingleEncoderModelBiSingle:
                 cells_en_bw = MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
 
-                (self.outputs_o, output_states) = tf.nn.bidirectional_dynamic_rnn(
+                (self.outputs_o, output_states) = tf.compat.v1.nn.bidirectional_dynamic_rnn(
                     cell_fw=cells_en_fw,
                     cell_bw=cells_en_bw,
                     inputs=self.embed_en_o,
@@ -210,7 +210,7 @@ class SingleEncoderModelBiSingle:
                 cells_en_bw_c = MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
 
-                (self.outputs_c, output_states) = tf.nn.bidirectional_dynamic_rnn(
+                (self.outputs_c, output_states) = tf.compat.v1.nn.bidirectional_dynamic_rnn(
                     cell_fw=cells_en_fw_c,
                     cell_bw=cells_en_bw_c,
                     inputs=self.embed_en_c,
@@ -239,7 +239,7 @@ class SingleEncoderModelBiSingle:
                 cells_en_bw_c = MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
 
-                (self.outputs_c, output_states) = tf.nn.bidirectional_dynamic_rnn(
+                (self.outputs_c, output_states) = tf.compat.v1.nn.bidirectional_dynamic_rnn(
                     cell_fw=cells_en_fw_c,
                     cell_bw=cells_en_bw_c,
                     inputs=self.embed_en_c,
