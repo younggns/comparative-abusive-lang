@@ -7,8 +7,28 @@ from datetime import datetime
 import pickle
 import numpy as np
 from transformers import BertTokenizer
+import torch
+from enum import Enum, auto
 
 from collections import Counter
+
+
+class EmbeddingMode(Enum):
+    GLOVE = auto()
+    BERT = auto()
+    OTHER = auto()
+
+    @classmethod
+    def fromStr(cls, string: str) -> EmbeddingMode:
+        lowered_string = string.lower()
+
+        if lowered_string == 'glove':
+            return EmbeddingMode.GLOVE
+        elif lowered_string == 'bert':
+            return EmbeddingMode.BERT
+        else:
+            return EmbeddingMode.OTHER
+
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 ###################################################################################
@@ -107,7 +127,7 @@ def genWordVocab(text_data, context_data, k):
     return id2word, word2id, ctxt_text_idx
 
 
-def genWordEmbeddings(ues_glove, path):
+def genWordEmbeddings(mode: EmbeddingMode, path):
 
     embedding_dim = 300
     with open(path+"/vocab.pkl", "rb") as f:
@@ -117,7 +137,7 @@ def genWordEmbeddings(ues_glove, path):
 
     glove_embedding_matrix = np.zeros((vocab_size, embedding_dim))
 
-    if ues_glove:
+    if mode == EmbeddingMode.GLOVE:
         glove = {}
         print("Loading pre-trained embedding.")
         f = open(path+"/../../glove.840B.300d.txt")
@@ -139,7 +159,27 @@ def genWordEmbeddings(ues_glove, path):
 
         np.save(path+"/embedding.npy", glove_embedding_matrix)
 
-    else:
+    # Bert embeddings
+    elif mode == EmbeddingMode.BERT:
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+        print("Generating bert embedding.")
+        for word in vocab["word2id"]:
+            if word == "PAD":
+                glove_embedding_matrix[vocab["word2id"]
+                                       [word]] = np.zeros(embedding_dim)
+            else:
+                tokenized_text = tokenizer.tokenize(f"[CLS]{word}[SEP]")
+                indexed_tokens = tokenizer.convert_tokens_to_ids(
+                    tokenized_text)
+                tokens_tensor = torch.tensor([indexed_tokens])
+
+                glove_embedding_matrix[vocab["word2id"][word]] = np.random.normal(
+                    0, 0.01, embedding_dim)
+
+        np.save(path+"/embedding.npy", glove_embedding_matrix)
+
+    elif mode == EmbeddingMode.OTHER:
         print("Generating random embedding.")
         for word in vocab["word2id"]:
             if word == "PAD":
@@ -149,6 +189,8 @@ def genWordEmbeddings(ues_glove, path):
                 glove_embedding_matrix[vocab["word2id"][word]] = np.random.normal(
                     0, 0.01, embedding_dim)
         np.save(path+"/embedding.npy", glove_embedding_matrix)
+    else:
+        print(f"Embedding mode not found: {mode}")
 
 ###################################################################################
 ############################## Char Vocab Generation ##############################
@@ -214,7 +256,7 @@ def save_kfold_npy(data_list, name, path, k):
             # print("Saved in %s. %s" % (file_name, str(array.shape)))
 
 
-def processWordVocab(target_path, use_glove, k):
+def processWordVocab(target_path, mode: EmbeddingMode, k):
     print("Processing word vocab....")
     data_path = os.path.dirname(os.path.abspath(__file__)) + "/../data"
     with open(data_path+"/data_splits.pkl", "rb") as f:
@@ -229,7 +271,7 @@ def processWordVocab(target_path, use_glove, k):
         pickle.dump({"word2id": word2id, "id2word": id2word}, f)
     print("Done creating vocabulary pickles")
 
-    genWordEmbeddings(use_glove, target_path)
+    genWordEmbeddings(mode, target_path)
 
 
 def processCharVocab(target_path, k):
@@ -247,11 +289,13 @@ def processCharVocab(target_path, k):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--use_glove", type=helper.str2bool, default=True)
+    # parser.add_argument("--use_glove", type=helper.str2bool, default=True)
+    parser.add_argument("--mode", type=str, default="glove")
     parser.add_argument("--num_splits", type=int, default=10)
     args = vars(parser.parse_args())
+    mode = EmbeddingMode.fromStr(args["mode"])
 
     target_path = os.path.dirname(
         os.path.abspath(__file__)) + "/../data/target"
-    processWordVocab(target_path, args["use_glove"], args["num_splits"])
+    processWordVocab(target_path, mode, args["num_splits"])
     processCharVocab(target_path, args["num_splits"])
