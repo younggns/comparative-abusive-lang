@@ -72,6 +72,7 @@ class SingleEncoderModelBiSingle:
     def _create_placeholders(self):
         print('[launch-text] placeholders')
         with tf.name_scope('text_placeholder'):
+            tf.compat.v1.disable_eager_execution()
 
             self.encoder_inputs_o = tf.compat.v1.placeholder(tf.int32, shape=[
                 self.batch_size, self.encoder_size], name="encoder_o")  # [batch,time_step]
