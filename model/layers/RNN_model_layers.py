@@ -4,8 +4,7 @@
 import tensorflow as tf
 import numpy as np
 
-from tensorflow.contrib.rnn import MultiRNNCell
-from tensorflow.contrib.rnn import RNNCell
+from tensorflow.compat.v1.nn.rnn_cell import MultiRNNCell, RNNCell
 from layers.RNN_params import Params
 
 #from zoneout import ZoneoutWrapper

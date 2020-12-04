@@ -6,8 +6,7 @@ what    : Single Encoder Model - bidirectional
 data    : twitter
 """
 import tensorflow as tf
-from tensorflow.contrib import rnn
-from tensorflow.contrib.rnn import DropoutWrapper
+from tensorflow.compat.v1.nn.rnn_cell import DropoutWrapper
 
 from tensorflow.core.framework import summary_pb2
 from random import shuffle
