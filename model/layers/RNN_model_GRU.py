@@ -17,7 +17,7 @@ from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import nn_ops
 from tensorflow.python.ops import variable_scope as vs
 from tensorflow.python.util import nest
-from tensorflow.contrib.rnn import RNNCell
+from tensorflow.compat.v1.nn.rnn_cell import RNNCell
 from layers.RNN_model_layers import gated_attention
 from layers.RNN_params import Params
 
