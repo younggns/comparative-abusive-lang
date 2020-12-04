@@ -15,18 +15,19 @@ from layers.RNN_params import Params
 
 class SingleEncoderModelBiSingle:
 
-    def __init__(self, dic_size,
-                 use_glove,
-                 batch_size,
-                 encoder_size,
-                 num_layer, lr,
-                 hidden_dim,
-                 dr,
-                 # o_type, c_text, c_type,
-                 c_text,
-                 attn, ltc,
-                 dbias
-                 ):
+    def __init__(
+        self, dic_size,
+        use_glove,
+        batch_size,
+        encoder_size,
+        num_layer, lr,
+        hidden_dim,
+        dr,
+        # o_type, c_text, c_type,
+        c_text,
+        attn, ltc,
+        dbias
+    ):
 
         self.dic_size = dic_size
         self.use_glove = use_glove
@@ -100,13 +101,15 @@ class SingleEncoderModelBiSingle:
     def _create_embedding(self):
         print('[launch-text] create embedding')
         with tf.name_scope('embed_layer'):
-            self.embed_matrix = tf.Variable(tf.random_normal([self.dic_size, self.embed_dim],
-                                                             mean=0.0,
-                                                             stddev=0.01,
-                                                             dtype=tf.float32,
-                                                             seed=None),
-                                            trainable=Params.EMBEDDING_TRAIN,
-                                            name='embed_matrix')
+            self.embed_matrix = tf.Variable(tf.keras.backend.random_normal(
+                [self.dic_size, self.embed_dim],
+                mean=0.0,
+                stddev=0.01,
+                dtype=tf.float32,
+                seed=None),
+                trainable=Params.EMBEDDING_TRAIN,
+                name='embed_matrix'
+            )
 
             self.embed_en_o = tf.nn.embedding_lookup(
                 self.embed_matrix, self.encoder_inputs_o, name='embed_encoder_o')
@@ -257,23 +260,27 @@ class SingleEncoderModelBiSingle:
             fw = self.outputs[0]
 
             # reversed backward output
-            bw = tf.reverse_sequence(self.outputs[1],
-                                     seq_lengths=self.encoder_seq_o,
-                                     seq_axis=1
-                                     )
+            bw = tf.reverse_sequence(
+                self.outputs[1],
+                seq_lengths=self.encoder_seq_o,
+                seq_axis=1
+            )
 
             self.output_concat = tf.concat([fw, bw], 2)
 
-            self.final_encoder, self.attn_norm = luong_attention(batch_size=self.batch_size,
-                                                                 target=self.output_concat,
-                                                                 condition=self.state_concat_c,
-                                                                 target_encoder_length=self.encoder_size,
-                                                                 hidden_dim=self.final_encoder_dimension
-                                                                 )
+            self.final_encoder, self.attn_norm = luong_attention(
+                batch_size=self.batch_size,
+                target=self.output_concat,
+                condition=self.state_concat_c,
+                target_encoder_length=self.encoder_size,
+                hidden_dim=self.final_encoder_dimension
+            )
 
     def _add_ff_layer(self):
-        print('[launch-text] add FF layer to reduce the dim: ',
-              Params.DIM_FF_LAYER)
+        print(
+            '[launch-text] add FF layer to reduce the dim: ',
+            Params.DIM_FF_LAYER
+        )
 
         with tf.name_scope('text_FF') as scope:
 
@@ -283,17 +290,18 @@ class SingleEncoderModelBiSingle:
                 dtype=tf.float32
             )
 
-            self.final_encoder = tf.keras.layers.Dense(inputs=self.final_encoder,
-                                                       num_outputs=Params.DIM_FF_LAYER,
-                                                       activation_fn=tf.nn.relu,
-                                                       normalizer_fn=None,
-                                                       normalizer_params=None,
-                                                       weights_initializer=initializers,
-                                                       weights_regularizer=None,
-                                                       biases_initializer=tf.zeros_initializer(),
-                                                       biases_regularizer=None,
-                                                       trainable=True
-                                                       )
+            self.final_encoder = tf.keras.layers.Dense(
+                inputs=self.final_encoder,
+                num_outputs=Params.DIM_FF_LAYER,
+                activation_fn=tf.nn.relu,
+                normalizer_fn=None,
+                normalizer_params=None,
+                weights_initializer=initializers,
+                weights_regularizer=None,
+                biases_initializer=tf.zeros_initializer(),
+                biases_regularizer=None,
+                trainable=True
+            )
 
             self.final_encoder_dimension = Params.DIM_FF_LAYER
 
@@ -316,30 +324,37 @@ class SingleEncoderModelBiSingle:
         print('[launch-text] apply LTC method')
 
         with tf.name_scope('text_LTC') as scope:
-            self.final_encoder, self.final_encoder_dimension = sy_ltc(batch_size=self.batch_size,
-                                                                      topic_size=4,
-                                                                      memory_dim=self.final_encoder_dimension,
-                                                                      hidden_dim=self.final_encoder_dimension,
-                                                                      input_encoder=self.final_encoder,
-                                                                      dr_memory_prob=1.0
-                                                                      )
+            self.final_encoder, self.final_encoder_dimension = sy_ltc(
+                batch_size=self.batch_size,
+                topic_size=4,
+                memory_dim=self.final_encoder_dimension,
+                hidden_dim=self.final_encoder_dimension,
+                input_encoder=self.final_encoder,
+                dr_memory_prob=1.0
+            )
 
     def _create_output_layers(self):
         print('[launch-text] create output projection layer')
 
         with tf.name_scope('text_output_layer') as scope:
 
-            self.M = tf.Variable(tf.random_uniform([self.final_encoder_dimension, Params.N_CATEGORY],
-                                                   minval=-0.25,
-                                                   maxval=0.25,
-                                                   dtype=tf.float32,
-                                                   seed=None),
-                                 trainable=True,
-                                 name="similarity_matrix")
+            self.M = tf.Variable(tf.random_uniform(
+                [self.final_encoder_dimension, Params.N_CATEGORY],
+                minval=-0.25,
+                maxval=0.25,
+                dtype=tf.float32,
+                seed=None),
+                trainable=True,
+                name="similarity_matrix"
+            )
 
-            self.b = tf.Variable(tf.zeros([Params.N_CATEGORY], dtype=tf.float32),
-                                 trainable=True,
-                                 name="output_bias")
+            self.b = tf.Variable(
+                tf.zeros(
+                    [Params.N_CATEGORY],
+                    dtype=tf.float32
+                ),
+                trainable=True,
+                name="output_bias")
 
             # e * M + b
             self.batch_pred = tf.matmul(self.final_encoder, self.M) + self.b
