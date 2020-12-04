@@ -70,27 +70,27 @@ class SingleEncoderModelBi:
         print('[launch] placeholders')
         with tf.name_scope('text_placeholder'):
 
-            self.encoder_inputs_o = tf.compat.placeholder(tf.int32, shape=[
+            self.encoder_inputs_o = tf.compat.v1.placeholder(tf.int32, shape=[
                 self.batch_size, self.encoder_size], name="encoder_o")  # [batch,time_step]
-            self.encoder_seq_o = tf.compat.placeholder(tf.int32, shape=[
+            self.encoder_seq_o = tf.compat.v1.placeholder(tf.int32, shape=[
                 self.batch_size], name="encoder_seq_o")   # [batch] - valid word step
-            # self.encoder_type_o    = tf.compat.placeholder(tf.int32, shape=[self.batch_size, 5], name="encoder_type_o")   # [batch] - tweet type 0-5
+            # self.encoder_type_o    = tf.compat.v1.placeholder(tf.int32, shape=[self.batch_size, 5], name="encoder_type_o")   # [batch] - tweet type 0-5
 
-            self.encoder_inputs_c = tf.compat.placeholder(tf.int32, shape=[
+            self.encoder_inputs_c = tf.compat.v1.placeholder(tf.int32, shape=[
                 self.batch_size, self.encoder_size], name="encoder_c")  # [batch,time_step]
-            self.encoder_seq_c = tf.compat.placeholder(tf.int32, shape=[
+            self.encoder_seq_c = tf.compat.v1.placeholder(tf.int32, shape=[
                 self.batch_size], name="encoder_seq_c")   # [batch] - valid word step
-            # self.encoder_type_c    = tf.compat.placeholder(tf.int32, shape=[self.batch_size, 5], name="encoder_type_c")   # [batch] - tweet type 0-5
+            # self.encoder_type_c    = tf.compat.v1.placeholder(tf.int32, shape=[self.batch_size, 5], name="encoder_type_c")   # [batch] - tweet type 0-5
 
-            self.y_labels = tf.compat.placeholder(
+            self.y_labels = tf.compat.v1.placeholder(
                 tf.float32, shape=[self.batch_size, Params.N_CATEGORY], name="label")
 
-            self.dr_prob = tf.compat.placeholder(tf.float32, name="dropout")
-            self.dr_prob_ltc = tf.compat.placeholder(
+            self.dr_prob = tf.compat.v1.placeholder(tf.float32, name="dropout")
+            self.dr_prob_ltc = tf.compat.v1.placeholder(
                 tf.float32, name="dropout_ltc")
 
             # for using pre-trained embedding
-            self.embedding_placeholder = tf.compat.placeholder(
+            self.embedding_placeholder = tf.compat.v1.placeholder(
                 tf.float32, shape=[self.dic_size, self.embed_dim], name="embedding_placeholder")
 
     def _encoding_ids(self):
