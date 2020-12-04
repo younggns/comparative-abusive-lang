@@ -76,7 +76,7 @@ def bidirectional_GRU(inputs, inputs_len, cell=None, cell_fn=GRUCell, units=0, l
         cell:       rnn cell of type RNN_Cell.
         output:     [ batch, step, dim (fw;bw) ], [ batch, dim (fw;bw) ]
     '''
-    with tf.compat.v1.variable_scope(scope, reuse=reuse, initializer=tf.orthogonal_initializer()):
+    with tf.compat.v1.variable_scope(scope, reuse=reuse, initializer=tf.keras.initializers.Orthogonal()):
         if cell is not None:
             (cell_fw, cell_bw) = cell
         else:

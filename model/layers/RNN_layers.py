@@ -31,7 +31,7 @@ def add_GRU(inputs, inputs_len, cell=None, cell_fn=GRUCell, hidden_dim=100, laye
         cell:       rnn cell of type RNN_Cell.
         output:     [ batch, step, dim (fw;bw) ], [ batch, dim (fw;bw) ]
     '''
-    with tf.compat.v1.variable_scope(name_or_scope=scope, reuse=reuse, initializer=tf.orthogonal_initializer()):
+    with tf.compat.v1.variable_scope(name_or_scope=scope, reuse=reuse, initializer=tf.keras.initializers.Orthogonal()):
 
         if cell is not None:
             (cell_fw, cell_bw) = cell

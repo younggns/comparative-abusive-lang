@@ -27,7 +27,7 @@ def ltc(batch_size, topic_size, memory_dim, input_hidden_dim, input_encoder, dr_
         # memory space for latent topic
         memory = tf.get_variable("latent_topic_memory",
                                  shape=[topic_size, memory_dim],
-                                 initializer=tf.orthogonal_initializer()
+                                 initializer=tf.keras.initializers.Orthogonal()
                                  )
 
         memory_W = tf.Variable(tf.random_uniform([input_hidden_dim, memory_dim],
