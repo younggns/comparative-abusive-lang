@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 import pickle
 import numpy as np
-from transformers import BertTokenizer
+from transformers import BertTokenizer, BertForSequenceClassification
 import torch
 from enum import Enum, auto
 
@@ -183,9 +183,18 @@ def genWordEmbeddings(mode: EmbeddingMode, path):
                 indexed_tokens = tokenizer.convert_tokens_to_ids(
                     tokenized_text)
                 tokens_tensor = torch.tensor([indexed_tokens])
+                model = BertForSequenceClassification.from_pretrained(
+                    'bert-base-uncased',
+                    output_hidden_states = True,
+                )
+                model.eval()
 
-                glove_embedding_matrix[vocab["word2id"][word]] = np.random.normal(
-                    0, 0.01, embedding_dim)
+                with torch.no_grad(): # 勾配計算なし
+                    all_encoder_layers = model(tokens_tensor)
+
+                embedding = all_encoder_layers[1][-2].numpy()[0]
+
+                glove_embedding_matrix[vocab["word2id"][word]] = np.mean(embedding, axis=0)
 
         np.save(path+"/embedding.npy", glove_embedding_matrix)
 
