@@ -70,27 +70,26 @@ class SingleEncoderModelBi:
         print('[launch] placeholders')
         with tf.name_scope('text_placeholder'):
 
-            self.encoder_inputs_o = tf.compat.v1.placeholder(tf.int32, shape=[
-                self.batch_size, self.encoder_size], name="encoder_o")  # [batch,time_step]
-            self.encoder_seq_o = tf.compat.v1.placeholder(tf.int32, shape=[
-                self.batch_size], name="encoder_seq_o")   # [batch] - valid word step
-            # self.encoder_type_o    = tf.compat.v1.placeholder(tf.int32, shape=[self.batch_size, 5], name="encoder_type_o")   # [batch] - tweet type 0-5
+            self.encoder_inputs_o = tf.placeholder(tf.int32, shape=[
+                                                   self.batch_size, self.encoder_size], name="encoder_o")  # [batch,time_step]
+            self.encoder_seq_o = tf.placeholder(tf.int32, shape=[
+                                                self.batch_size], name="encoder_seq_o")   # [batch] - valid word step
+            # self.encoder_type_o    = tf.placeholder(tf.int32, shape=[self.batch_size, 5], name="encoder_type_o")   # [batch] - tweet type 0-5
 
-            self.encoder_inputs_c = tf.compat.v1.placeholder(tf.int32, shape=[
-                self.batch_size, self.encoder_size], name="encoder_c")  # [batch,time_step]
-            self.encoder_seq_c = tf.compat.v1.placeholder(tf.int32, shape=[
-                self.batch_size], name="encoder_seq_c")   # [batch] - valid word step
-            # self.encoder_type_c    = tf.compat.v1.placeholder(tf.int32, shape=[self.batch_size, 5], name="encoder_type_c")   # [batch] - tweet type 0-5
+            self.encoder_inputs_c = tf.placeholder(tf.int32, shape=[
+                                                   self.batch_size, self.encoder_size], name="encoder_c")  # [batch,time_step]
+            self.encoder_seq_c = tf.placeholder(tf.int32, shape=[
+                                                self.batch_size], name="encoder_seq_c")   # [batch] - valid word step
+            # self.encoder_type_c    = tf.placeholder(tf.int32, shape=[self.batch_size, 5], name="encoder_type_c")   # [batch] - tweet type 0-5
 
-            self.y_labels = tf.compat.v1.placeholder(
+            self.y_labels = tf.placeholder(
                 tf.float32, shape=[self.batch_size, Params.N_CATEGORY], name="label")
 
-            self.dr_prob = tf.compat.v1.placeholder(tf.float32, name="dropout")
-            self.dr_prob_ltc = tf.compat.v1.placeholder(
-                tf.float32, name="dropout_ltc")
+            self.dr_prob = tf.placeholder(tf.float32, name="dropout")
+            self.dr_prob_ltc = tf.placeholder(tf.float32, name="dropout_ltc")
 
             # for using pre-trained embedding
-            self.embedding_placeholder = tf.compat.v1.placeholder(
+            self.embedding_placeholder = tf.placeholder(
                 tf.float32, shape=[self.dic_size, self.embed_dim], name="embedding_placeholder")
 
     def _encoding_ids(self):
@@ -176,10 +175,10 @@ class SingleEncoderModelBi:
         print('[launch-model_util] apply self-matching for origianl text')
 
         # Apply gated attention recurrent network for both query-passage matching and self matching networks
-        with tf.compat.v1.variable_scope("self-matching"):
+        with tf.variable_scope("self-matching"):
 
             self.params = get_attn_params(
-                self.final_encoder_dimension/2, initializer=tf.nn.conv2d)
+                self.final_encoder_dimension/2, initializer=tf.contrib.layers.xavier_initializer)
 
             memory = self.final_encoding
             inputs = self.final_encoding
@@ -252,13 +251,13 @@ class SingleEncoderModelBi:
 
         with tf.name_scope('text_FF') as scope:
 
-            initializers = tf.nn.conv2d(
+            initializers = tf.contrib.layers.xavier_initializer(
                 uniform=True,
                 seed=None,
                 dtype=tf.float32
             )
 
-            self.final_step = tf.keras.layers.Dense(
+            self.final_step = tf.contrib.layers.fully_connected(
                 inputs=self.final_step,
                 num_outputs=Params.DIM_FF_LAYER,
                 activation_fn=tf.nn.tanh,

@@ -8,7 +8,7 @@ from tensorflow.compat.v1.nn.rnn_cell import DropoutWrapper, ResidualWrapper, Mu
 
 # cell instance
 def gru_cell(hidden_dim):
-    return GRUCell(num_units=hidden_dim)
+    return tf.contrib.rnn.GRUCell(num_units=hidden_dim)
 
 # cell instance with drop-out wrapper applied
 
@@ -16,12 +16,12 @@ def gru_cell(hidden_dim):
 def drop_out_cell(hidden_dim=None, dr_in=1.0, dr_out=1.0, is_residual=False):
     if is_residual:
         print('residual connection')
-        return ResidualWrapper(DropoutWrapper(gru_cell(hidden_dim), input_keep_prob=dr_in, output_keep_prob=dr_out))
+        return tf.contrib.rnn.ResidualWrapper(tf.contrib.rnn.DropoutWrapper(gru_cell(hidden_dim), input_keep_prob=dr_in, output_keep_prob=dr_out))
     else:
-        return DropoutWrapper(gru_cell(hidden_dim), input_keep_prob=dr_in, output_keep_prob=dr_out)
+        return tf.contrib.rnn.DropoutWrapper(gru_cell(hidden_dim), input_keep_prob=dr_in, output_keep_prob=dr_out)
 
 
-def add_GRU(inputs, inputs_len, cell=None, cell_fn=GRUCell, hidden_dim=100, layers=1, scope="add_GRU", output=0, is_training=True, reuse=None, dr_input_keep_prob=1.0, dr_output_keep_prob=1.0, is_bidir=False, is_bw_reversed=False, is_residual=False):
+def add_GRU(inputs, inputs_len, cell=None, cell_fn=tf.contrib.rnn.GRUCell, hidden_dim=100, layers=1, scope="add_GRU", output=0, is_training=True, reuse=None, dr_input_keep_prob=1.0, dr_output_keep_prob=1.0, is_bidir=False, is_bw_reversed=False, is_residual=False):
     '''
     Bidirectional recurrent neural network with GRU cells.
 
@@ -31,7 +31,7 @@ def add_GRU(inputs, inputs_len, cell=None, cell_fn=GRUCell, hidden_dim=100, laye
         cell:       rnn cell of type RNN_Cell.
         output:     [ batch, step, dim (fw;bw) ], [ batch, dim (fw;bw) ]
     '''
-    with tf.compat.v1.variable_scope(name_or_scope=scope, reuse=reuse, initializer=tf.keras.initializers.Orthogonal()):
+    with tf.variable_scope(name_or_scope=scope, reuse=reuse, initializer=tf.orthogonal_initializer()):
 
         if cell is not None:
             (cell_fw, cell_bw) = cell
@@ -62,7 +62,7 @@ def add_GRU(inputs, inputs_len, cell=None, cell_fn=GRUCell, hidden_dim=100, laye
         if is_bidir:
             # output : [ (fw,bw), batch, step, dim ]
             # status : [ (fw,bw), layer, seq, embed_dim ]
-            outputs, states = tf.compat.v1.nn.bidirectional_dynamic_rnn(
+            outputs, states = tf.nn.bidirectional_dynamic_rnn(
                 cell_fw=cell_fw,
                 cell_bw=cell_bw,
                 inputs=inputs,

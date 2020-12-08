@@ -4,8 +4,7 @@
 import tensorflow as tf
 import numpy as np
 
-from tensorflow.compat.v1 import truncated_normal_initializer
-from tensorflow.compat.v1.nn.rnn_cell import MultiRNNCell, RNNCell, GRUCell
+from tensorflow.compat.v1.nn.rnn_cell import MultiRNNCell, RNNCell
 from layers.RNN_params import Params
 
 #from zoneout import ZoneoutWrapper
@@ -22,7 +21,7 @@ W_v^Q.shape:    (attn_size, attn_size)
 '''
 
 
-def get_attn_params(attn_size, initializer=truncated_normal_initializer):
+def get_attn_params(attn_size, initializer=tf.truncated_normal_initializer):
     '''
     Args:
         attn_size: the size of attention specified in https://www.microsoft.com/en-us/research/wp-content/uploads/2017/05/r-net.pdf
@@ -31,7 +30,7 @@ def get_attn_params(attn_size, initializer=truncated_normal_initializer):
     Returns:
         params: A collection of parameters used throughout the layers
     '''
-    with tf.compat.v1.variable_scope("attention_weights"):
+    with tf.variable_scope("attention_weights"):
         params = {
             # 0 case "W_u_Q":tf.get_variable("W_u_Q",dtype = tf.float32, shape = (2 * attn_size, attn_size), initializer = initializer()),
             # "W_ru_Q":tf.get_variable("W_ru_Q",dtype = tf.float32, shape = (2 * attn_size, 2 * attn_size), initializer = initializer()),
@@ -56,17 +55,17 @@ def apply_dropout(inputs, size=None, is_training=True, input_keep_prob=1.0, outp
     # if Params.zoneout is not None:
     #    return ZoneoutWrapper(inputs, state_zoneout_prob= Params.zoneout, is_training = is_training)
     elif is_training:
-        return DropoutWrapper(inputs,
-                              input_keep_prob=input_keep_prob,
-                              output_keep_prob=output_keep_prob,
-                              # variational_recurrent = True,
-                              # input_size = size,
-                              dtype=tf.float32)
+        return tf.contrib.rnn.DropoutWrapper(inputs,
+                                             input_keep_prob=input_keep_prob,
+                                             output_keep_prob=output_keep_prob,
+                                             # variational_recurrent = True,
+                                             # input_size = size,
+                                             dtype=tf.float32)
     else:
         return inputs
 
 
-def bidirectional_GRU(inputs, inputs_len, cell=None, cell_fn=GRUCell, units=0, layers=1, scope="Bidirectional_GRU", output=0, is_training=True, reuse=None, dr_input_keep_prob=1.0, dr_output_keep_prob=1.0, is_bidir=False):
+def bidirectional_GRU(inputs, inputs_len, cell=None, cell_fn=tf.contrib.rnn.GRUCell, units=0, layers=1, scope="Bidirectional_GRU", output=0, is_training=True, reuse=None, dr_input_keep_prob=1.0, dr_output_keep_prob=1.0, is_bidir=False):
     '''
     Bidirectional recurrent neural network with GRU cells.
 
@@ -76,7 +75,7 @@ def bidirectional_GRU(inputs, inputs_len, cell=None, cell_fn=GRUCell, units=0, l
         cell:       rnn cell of type RNN_Cell.
         output:     [ batch, step, dim (fw;bw) ], [ batch, dim (fw;bw) ]
     '''
-    with tf.compat.v1.variable_scope(scope, reuse=reuse, initializer=tf.keras.initializers.Orthogonal()):
+    with tf.variable_scope(scope, reuse=reuse, initializer=tf.orthogonal_initializer()):
         if cell is not None:
             (cell_fw, cell_bw) = cell
         else:
@@ -102,7 +101,7 @@ def bidirectional_GRU(inputs, inputs_len, cell=None, cell_fn=GRUCell, units=0, l
                         cell_fn(units), size=inputs.shape[-1], is_training=is_training)
 
         if is_bidir:
-            outputs, states = tf.compat.v1.nn.bidirectional_dynamic_rnn(
+            outputs, states = tf.nn.bidirectional_dynamic_rnn(
                 cell_fw=cell_fw,
                 cell_bw=cell_bw,
                 inputs=inputs,
@@ -131,7 +130,7 @@ def bidirectional_GRU(inputs, inputs_len, cell=None, cell_fn=GRUCell, units=0, l
 
 
 def attention_rnn(inputs, inputs_len, units, attn_cell, bidirection=True, scope="gated_attention_rnn", is_training=True, dr_prob=1.0, is_bidir=False):
-    with tf.compat.v1.variable_scope(scope):
+    with tf.variable_scope(scope):
         if bidirection:
             outputs, last_states = bidirectional_GRU(
                 inputs=inputs,
@@ -155,7 +154,7 @@ def attention_rnn(inputs, inputs_len, units, attn_cell, bidirection=True, scope=
 
 
 def gated_attention(memory, inputs, states, units, params, self_matching=False, memory_len=None, scope="gated_attention", batch_size=0):
-    with tf.compat.v1.variable_scope(scope):
+    with tf.variable_scope(scope):
         weights, W_g = params
         inputs_ = [memory, inputs]
         states = tf.reshape(states, (int(batch_size), int(units)))
@@ -178,7 +177,7 @@ def mask_attn_score(score, memory_sequence_length, score_mask_value=-1e8):
 
 
 def attention(inputs, units, weights, scope="attention", memory_len=None, reuse=None, batch_size=0):
-    with tf.compat.v1.variable_scope(scope, reuse=reuse):
+    with tf.variable_scope(scope, reuse=reuse):
         outputs_ = []
         weights, v = weights
         for i, (inp, w) in enumerate(zip(inputs, weights)):
@@ -186,7 +185,7 @@ def attention(inputs, units, weights, scope="attention", memory_len=None, reuse=
             inp = tf.reshape(inp, (-1, shapes[-1]))
             if w is None:
                 w = tf.get_variable("w_%d" % i, dtype=tf.float32, shape=[
-                                    shapes[-1], units], initializer=tf.nn.conv2d())
+                                    shapes[-1], units], initializer=tf.contrib.layers.xavier_initializer())
             outputs = tf.matmul(inp, w)
             # Hardcoded attention output reshaping. Equation (4), (8), (9) and (11) in the original paper.
             if len(shapes) > 2:
@@ -199,7 +198,7 @@ def attention(inputs, units, weights, scope="attention", memory_len=None, reuse=
         outputs = sum(outputs_)
 
         b = tf.get_variable(
-            "b", shape=outputs.shape[-1], dtype=tf.float32, initializer=tf.nn.conv2d())
+            "b", shape=outputs.shape[-1], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer())
         outputs += b
 
         scores = tf.reduce_sum(tf.tanh(outputs) * v, [-1])
