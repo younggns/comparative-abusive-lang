@@ -3,7 +3,9 @@
 import tensorflow as tf
 import numpy as np
 
-from tensorflow.compat.v1.nn.rnn_cell import DropoutWrapper, ResidualWrapper, MultiRNNCell, GRUCell
+from tensorflow.contrib.rnn import MultiRNNCell
+from tensorflow.contrib.rnn import GRUCell
+from tensorflow.contrib.rnn import DropoutWrapper, ResidualWrapper
 
 
 # cell instance
