@@ -184,7 +184,7 @@ def genWordEmbeddings(mode: EmbeddingMode, path):
                     tokenized_text)
                 tokens_tensor = torch.tensor([indexed_tokens])
                 model = BertForSequenceClassification.from_pretrained(
-                    'bert-base-uncased',
+                    'bert-base-cased',
                     output_hidden_states = True,
                 )
                 model.eval()
