@@ -14,6 +14,7 @@ from layers.RNN_model_bi import *
 from layers.RNN_process_data_char import *
 from layers.RNN_evaluation import *
 from layers.RNN_params import Params
+from .utils.rnn import RNNUtil
 
 
 # for training
@@ -154,28 +155,16 @@ def train_model(model, batch_gen, num_train_steps, valid_freq, is_save=0, graph_
         print(accr_class, recall_class, f1_class)
 
         # result logging to file
-        with open('./TEST_run_result.txt', 'a') as f:
-            f.write(datetime.datetime.now().strftime("%Y-%m-%d %H:%M") + '\t' +
-                    batch_gen.data_path.split('/')[-2] + '\t' +
-                    graph_dir_name + '\t' + \
-                    # str(best_dev_f1) + '\t' + \
-                    # str(test_f1_at_best_dev) + '\t' + \
-                    str(accr_class[0]) + '\t' + \
-                    str(recall_class[0]) + '\t' + \
-                    str(f1_class[0]) + '\t\t' + \
-                    str(accr_class[1]) + '\t' + \
-                    str(recall_class[1]) + '\t' + \
-                    str(f1_class[1]) + '\t\t' + \
-                    str(accr_class[2]) + '\t' + \
-                    str(recall_class[2]) + '\t' + \
-                    str(f1_class[2]) + '\t\t' + \
-                    str(accr_class[3]) + '\t' + \
-                    str(recall_class[3]) + '\t' + \
-                    str(f1_class[3]) + '\t\t' + \
-                    str(accr_avg) + '\t' + \
-                    str(recall_avg) + '\t' + \
-                    str(f1_avg) + \
-                    '\n')
+        RNNUtil().saveResult(
+            batch_gen,
+            graph_dir_name,
+            accr_class,
+            recall_class,
+            f1_class,
+            accr_avg,
+            recall_avg,
+            f1_avg
+        )
 
 
 def create_dir(dir_name):
