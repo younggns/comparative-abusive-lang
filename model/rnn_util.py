@@ -7,7 +7,7 @@ from layers.RNN_process_data import ProcessData
 class RNNUtil:
 
     def saveResult(
-            self: RNNUtil,
+            self,
             batch_gen: ProcessData,
             graph_dir_name: str,
             accr_class: List,
