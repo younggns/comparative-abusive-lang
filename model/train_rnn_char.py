@@ -14,7 +14,7 @@ from layers.RNN_model_bi import *
 from layers.RNN_process_data_char import *
 from layers.RNN_evaluation import *
 from layers.RNN_params import Params
-from .utils.rnn import RNNUtil
+from utils.rnn import RNNUtil
 
 
 # for training
@@ -58,7 +58,8 @@ def train_model(model, batch_gen, num_train_steps, valid_freq, is_save=0, graph_
 
     with tf.compat.v1.Session(config=config) as sess:
 
-        writer = tf.compat.v1.summary.FileWriter('./graph/'+graph_dir_name, sess.graph)
+        writer = tf.compat.v1.summary.FileWriter(
+            './graph/'+graph_dir_name, sess.graph)
         sess.run(tf.compat.v1.global_variables_initializer())
 
         early_stop_count = Params.MAX_EARLY_STOP_COUNT

@@ -14,7 +14,7 @@ from layers.RNN_model_bi_ctx import *
 from layers.RNN_process_data_ctx import *
 from layers.RNN_evaluation import *
 from layers.RNN_params import Params
-from .utils.rnn import RNNUtil
+from utils.rnn import RNNUtil
 
 
 # for training
@@ -74,7 +74,8 @@ def train_model(model, batch_gen, num_train_steps, valid_freq, is_save=0, graph_
             print('from check point!!!')
             saver.restore(sess, ckpt.model_checkpoint_path)
 
-        writer = tf.compat.v1.summary.FileWriter('./graph/'+graph_dir_name, sess.graph)
+        writer = tf.compat.v1.summary.FileWriter(
+            './graph/'+graph_dir_name, sess.graph)
 
         initial_time = time.time()
 
