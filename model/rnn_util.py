@@ -1,7 +1,7 @@
 import datetime
 from typing import List
 
-from ..layers.RNN_process_data import ProcessData
+from layers.RNN_process_data import ProcessData
 
 
 class RNNUtil:

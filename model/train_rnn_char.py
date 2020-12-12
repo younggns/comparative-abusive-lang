@@ -14,7 +14,7 @@ from layers.RNN_model_bi import *
 from layers.RNN_process_data_char import *
 from layers.RNN_evaluation import *
 from layers.RNN_params import Params
-from utils.rnn import RNNUtil
+from rnn_util import RNNUtil
 
 
 # for training
