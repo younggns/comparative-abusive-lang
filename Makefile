@@ -8,4 +8,4 @@ down:
 
 .PHONY: exec
 exec:
-	docker exec comparative-abusive-lang bash
+	docker exec -it comparative-abusive-lang bash
