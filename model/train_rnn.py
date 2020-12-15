@@ -19,6 +19,9 @@ from rnn_util import RNNUtil
 
 # for training
 
+tf.compat.v1.disable_v2_behavior()
+tf.compat.v1.disable_eager_execution()
+
 
 def train_step(sess, model, batch_gen):
     # raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_type_con,
@@ -64,9 +67,6 @@ def train_model(
     val_summary = None
 
     with tf.compat.v1.Session(config=config) as sess:
-
-        sess.run(tf.compat.v1.disable_v2_behavior())
-
         writer = tf.compat.v1.summary.FileWriter(
             './graph/' + graph_dir_name, sess.graph)
         sess.run(tf.compat.v1.global_variables_initializer())
