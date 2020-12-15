@@ -63,7 +63,6 @@ def train_model(
     summary = None
     val_summary = None
     tf.compat.v1.disable_v2_behavior()
-    tf.compat.v1.enable_eager_execution()
 
     with tf.compat.v1.Session(config=config) as sess:
 
