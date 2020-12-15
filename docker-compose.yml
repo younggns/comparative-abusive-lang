@@ -1,0 +1,9 @@
+version: '3'
+services:
+    app:
+        build: .
+        container_name: comparative-abusive-lang
+        working_dir: '/root/dev/'
+        tty: true
+        volumes:
+            - .:/root/dev/
