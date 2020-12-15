@@ -23,17 +23,11 @@ import functools
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 
-def train(
-        feature_level,
-        n_gram_tuple,
-        max_feature_length,
-        classifier,
-        output_path,
-        k):
+def train(feature_level, n_gram_tuple, max_feature_length, classifier, output_path, k):
     splits = ["train", "valid", "test"]
 
     path = os.path.dirname(os.path.abspath(__file__))
-    with open(path + "/../data/data_splits.pkl", "rb") as f:
+    with open(path+"/../data/data_splits.pkl", "rb") as f:
         _data = pickle.load(f)
 
     for index in range(k):
@@ -54,52 +48,24 @@ def train(
                 label_data[split].append(label_index)
 
         if classifier == 'NB':
-            text_clf = Pipeline([('vect',
-                                  TfidfVectorizer(ngram_range=(n_gram_tuple[0],
-                                                               n_gram_tuple[1]),
-                                                  analyzer=feature_level,
-                                                  max_features=max_feature_length)),
-                                 ('clf',
-                                  MultinomialNB())])
+            text_clf = Pipeline([('vect', TfidfVectorizer(ngram_range=(n_gram_tuple[0], n_gram_tuple[1]), analyzer=feature_level, max_features=max_feature_length)),
+                                 ('clf', MultinomialNB())])
 
         elif classifier == 'LR':
-            text_clf = Pipeline([('vect',
-                                  TfidfVectorizer(ngram_range=(n_gram_tuple[0],
-                                                               n_gram_tuple[1]),
-                                                  analyzer=feature_level,
-                                                  max_features=max_feature_length)),
-                                 ('clf',
-                                  LogisticRegression(multi_class="multinomial",
-                                                     solver="lbfgs"))])
+            text_clf = Pipeline([('vect', TfidfVectorizer(ngram_range=(n_gram_tuple[0], n_gram_tuple[1]), analyzer=feature_level, max_features=max_feature_length)),
+                                 ('clf', LogisticRegression(multi_class="multinomial", solver="lbfgs"))])
 
         elif classifier == 'SVM':
-            text_clf = Pipeline([('vect',
-                                  TfidfVectorizer(ngram_range=(n_gram_tuple[0],
-                                                               n_gram_tuple[1]),
-                                                  analyzer=feature_level,
-                                                  max_features=max_feature_length)),
-                                 ('clf',
-                                  SGDClassifier(loss='log',
-                                                penalty='l2'))])
+            text_clf = Pipeline([('vect', TfidfVectorizer(ngram_range=(n_gram_tuple[0], n_gram_tuple[1]), analyzer=feature_level, max_features=max_feature_length)),
+                                 ('clf', SGDClassifier(loss='log', penalty='l2'))])
 
         elif classifier == 'RF':
-            text_clf = Pipeline([('vect',
-                                  TfidfVectorizer(ngram_range=(n_gram_tuple[0],
-                                                               n_gram_tuple[1]),
-                                                  analyzer=feature_level,
-                                                  max_features=max_feature_length)),
-                                 ('clf',
-                                  RandomForestClassifier())])
+            text_clf = Pipeline([('vect', TfidfVectorizer(ngram_range=(n_gram_tuple[0], n_gram_tuple[1]), analyzer=feature_level, max_features=max_feature_length)),
+                                 ('clf', RandomForestClassifier())])
 
         elif classifier == 'GBT':
-            text_clf = Pipeline([('vect',
-                                  TfidfVectorizer(ngram_range=(n_gram_tuple[0],
-                                                               n_gram_tuple[1]),
-                                                  analyzer=feature_level,
-                                                  max_features=max_feature_length)),
-                                 ('clf',
-                                  GradientBoostingClassifier(learning_rate=1,
-                                                             max_depth=1))])
+            text_clf = Pipeline([('vect', TfidfVectorizer(ngram_range=(n_gram_tuple[0], n_gram_tuple[1]), analyzer=feature_level, max_features=max_feature_length)),
+                                 ('clf', GradientBoostingClassifier(learning_rate=1, max_depth=1))])
         else:
             print("Invalid classifier input.")
             exit()
@@ -109,7 +75,7 @@ def train(
         print("Output prediction on test data....")
         pred_scores = text_clf.predict_proba(text_data["test"])
 
-        with open(output_path + "/pred_output_" + str(index) + ".pkl", "wb") as f:
+        with open(output_path+"/pred_output_"+str(index)+".pkl", "wb") as f:
             print("Writing prediction output pickle files....")
             pickle.dump({"pred_scores": pred_scores,
                          "labels": label_data["test"]}, f)
@@ -137,8 +103,7 @@ def report_average(report_list, labels):
     res = functools.reduce(lambda x, y: x.add(
         y, fill_value=0), output_report_list) / len(output_report_list)
     metric_labels = labels + ['avg / total']
-    return res.rename(
-        index={res.index[idx]: metric_labels[idx] for idx in range(len(res.index))})
+    return res.rename(index={res.index[idx]: metric_labels[idx] for idx in range(len(res.index))})
 
 
 def evaluate(feature_level, classifier, output_path, k, labels):
@@ -147,7 +112,7 @@ def evaluate(feature_level, classifier, output_path, k, labels):
 
     for index in range(k):
 
-        with open(output_path + "/pred_output_" + str(index) + ".pkl", "rb") as f:
+        with open(output_path+"/pred_output_"+str(index)+".pkl", "rb") as f:
             _data = pickle.load(f)
 
         preds, target = _data["pred_scores"], _data["labels"]
@@ -178,14 +143,14 @@ if __name__ == "__main__":
     max_features = input("{:25}".format("max number of features:"))
 
     path = os.path.dirname(os.path.abspath(__file__))
-    model_name = args['clf'] + '_' + args["feature_level"]
+    model_name = args['clf']+'_'+args["feature_level"]
     output_path = path + "/../data/output/" + \
-        model_name + "/" + str(int(time.time()))
+        model_name+"/"+str(int(time.time()))
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
     data_path = os.path.dirname(os.path.abspath(__file__)) + "/../data/"
-    with open(data_path + "crawled_data.pkl", "rb") as f:
+    with open(data_path+"crawled_data.pkl", "rb") as f:
         id2entities = pickle.load(f)
 
     labels = list(set([entity[0] for entity in id2entities.values()]))

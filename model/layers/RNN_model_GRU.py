@@ -162,10 +162,8 @@ def linear(args,
         if shape.ndims != 2:
             raise ValueError("linear is expecting 2D arguments: %s" % shapes)
         if shape[1].value is None:
-            raise ValueError(
-                "linear expects shape[1] to be provided for shape %s, "
-                "but saw %s" %
-                (shape, shape[1]))
+            raise ValueError("linear expects shape[1] to be provided for shape %s, "
+                             "but saw %s" % (shape, shape[1]))
         else:
             total_arg_size += shape[1].value
 

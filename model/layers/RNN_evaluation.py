@@ -16,17 +16,17 @@ from sklearn.metrics import precision_score
 from layers.RNN_params import Params
 
 """
-    desc  :
-
-    inputs:
+    desc  : 
+    
+    inputs: 
         sess  : tf session
         model : model for test
         data  : such as the dev_set, test_set...
-
+            
     return:
         sum_batch_ce : sum cross_entropy
         accr         : accuracy
-
+        
 """
 
 
@@ -44,9 +44,7 @@ def run_test(sess, model, batch_gen, data):
     # evaluate data ( N of chunk (batch_size) + remaining( +1) )
     for test_itr in range(max_loop + 1):
 
-        # raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_type_con,
-        # raw_encoder_input_ori, raw_encoder_seq_ori, raw_encoder_type_ori,
-        # raw_label = batch_gen.get_batch(
+        # raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_type_con, raw_encoder_input_ori, raw_encoder_seq_ori, raw_encoder_type_ori, raw_label = batch_gen.get_batch(
         raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_input_ori, raw_encoder_seq_ori, raw_label = batch_gen.get_batch(
             data=data,
             batch_size=model.batch_size,
@@ -79,7 +77,7 @@ def run_test(sess, model, batch_gen, data):
         try:
             bpred, bloss = sess.run(
                 [model.batch_pred, model.batch_loss], input_feed)
-        except BaseException:
+        except:
             print("excepetion occurs in valid step : " + str(test_itr))
             pass
 
