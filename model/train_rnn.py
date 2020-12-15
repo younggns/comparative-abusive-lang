@@ -62,9 +62,10 @@ def train_model(
 
     summary = None
     val_summary = None
-    tf.compat.v1.disable_v2_behavior()
 
     with tf.compat.v1.Session(config=config) as sess:
+
+        sess.run(tf.compat.v1.disable_v2_behavior())
 
         writer = tf.compat.v1.summary.FileWriter(
             './graph/' + graph_dir_name, sess.graph)
