@@ -15,6 +15,7 @@ from layers.RNN_params import Params
 from layers.RNN_model_layers import *
 from layers.RNN_model_GRU import gated_attention_Wrapper
 from layers.RNN_layers import add_GRU
+from tf_slim.layers import fully_connected
 
 tf.compat.v1.disable_eager_execution()
 
@@ -281,18 +282,18 @@ class SingleEncoderModelBi:
                 scale=1.0, mode="fan_avg", distribution=(
                     "uniform" if True else "truncated_normal"), seed=None, dtype=tf.float32)
 
-            self.final_step = tf.keras.Sequential([
-                tf.keras.layers.Dense(
-                    self.final_step,
-                    activation='tanh',
-                    kernel_initializer=initializers,
-                    kernel_regularizer=None,
-                    bias_initializer='zeros',
-                    bias_regularizer=None
-                ),
-                tf.keras.layers.Dense(Params.DIM_FF_LAYER),
-            ])
-            self.final_step.trainable = True
+            self.final_step = fully_connected(
+                inputs=self.final_step,
+                num_outputs=Params.DIM_FF_LAYER,
+                activation_fn=tf.nn.tanh,
+                normalizer_fn=None,
+                normalizer_params=None,
+                weights_initializer=initializers,
+                weights_regularizer=None,
+                biases_initializer=tf.zeros_initializer(),
+                biases_regularizer=None,
+                trainable=True
+            )
 
             self.final_encoder_dimension = Params.DIM_FF_LAYER
 
