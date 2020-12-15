@@ -6,8 +6,6 @@ what    : Single Encoder Model - bidirectional
 data    : twitter
 """
 import tensorflow as tf
-from tensorflow.contrib import rnn
-from tensorflow.contrib.rnn import DropoutWrapper
 
 from tensorflow.core.framework import summary_pb2
 from random import shuffle
@@ -17,19 +15,26 @@ from layers.RNN_params import Params
 from layers.RNN_model_layers import *
 from layers.RNN_model_GRU import gated_attention_Wrapper
 from layers.RNN_layers import add_GRU
+from tf_slim.layers import fully_connected
+
+tf.compat.v1.disable_eager_execution()
 
 
 class SingleEncoderModelBi:
 
-    def __init__(self, dic_size,
-                 use_glove,
-                 batch_size,
-                 encoder_size,
-                 num_layer, lr,
-                 hidden_dim,
-                 dr,
-                 attn, ltc
-                 ):
+    def __init__(
+        self,
+        dic_size,
+        use_glove,
+        batch_size,
+        encoder_size,
+        num_layer,
+        lr,
+        hidden_dim,
+        dr,
+        attn,
+        ltc
+    ):
 
         self.dic_size = dic_size
         self.use_glove = use_glove
@@ -69,62 +74,45 @@ class SingleEncoderModelBi:
 
     def _create_placeholders(self):
         print('[launch] placeholders')
-        with tf.name_scope('text_placeholder'):
+        with tf.compat.v1.name_scope('text_placeholder'):
 
-            self.encoder_inputs_o = tf.placeholder(
-                tf.int32,
-                shape=[
-                    self.batch_size,
-                    self.encoder_size],
-                name="encoder_o")  # [batch,time_step]
-            self.encoder_seq_o = tf.placeholder(
-                tf.int32,
-                shape=[
-                    self.batch_size],
-                name="encoder_seq_o")  # [batch] - valid word step
+            self.encoder_inputs_o = tf.compat.v1.placeholder(tf.int32, shape=[
+                self.batch_size, self.encoder_size], name="encoder_o")  # [batch,time_step]
+            self.encoder_seq_o = tf.compat.v1.placeholder(tf.int32, shape=[
+                self.batch_size], name="encoder_seq_o")   # [batch] - valid word step
             # self.encoder_type_o    = tf.placeholder(tf.int32,
             # shape=[self.batch_size, 5], name="encoder_type_o")   # [batch] -
             # tweet type 0-5
 
-            self.encoder_inputs_c = tf.placeholder(
-                tf.int32,
-                shape=[
-                    self.batch_size,
-                    self.encoder_size],
-                name="encoder_c")  # [batch,time_step]
-            self.encoder_seq_c = tf.placeholder(
-                tf.int32,
-                shape=[
-                    self.batch_size],
-                name="encoder_seq_c")  # [batch] - valid word step
+            self.encoder_inputs_c = tf.compat.v1.placeholder(tf.int32, shape=[
+                self.batch_size, self.encoder_size], name="encoder_c")  # [batch,time_step]
+            self.encoder_seq_c = tf.compat.v1.placeholder(tf.int32, shape=[
+                self.batch_size], name="encoder_seq_c")   # [batch] - valid word step
             # self.encoder_type_c    = tf.placeholder(tf.int32,
             # shape=[self.batch_size, 5], name="encoder_type_c")   # [batch] -
             # tweet type 0-5
 
-            self.y_labels = tf.placeholder(
+            self.y_labels = tf.compat.v1.placeholder(
                 tf.float32,
                 shape=[
                     self.batch_size,
                     Params.N_CATEGORY],
                 name="label")
 
-            self.dr_prob = tf.placeholder(tf.float32, name="dropout")
-            self.dr_prob_ltc = tf.placeholder(tf.float32, name="dropout_ltc")
+            self.dr_prob = tf.compat.v1.placeholder(tf.float32, name="dropout")
+            self.dr_prob_ltc = tf.compat.v1.placeholder(
+                tf.float32, name="dropout_ltc")
 
             # for using pre-trained embedding
-            self.embedding_placeholder = tf.placeholder(
-                tf.float32,
-                shape=[
-                    self.dic_size,
-                    self.embed_dim],
-                name="embedding_placeholder")
+            self.embedding_placeholder = tf.compat.v1.placeholder(
+                tf.float32, shape=[self.dic_size, self.embed_dim], name="embedding_placeholder")
 
     def _encoding_ids(self):
         print('[launch] encoding_ids with GRU, is_bidir: ',
               Params.is_text_encoding_bidir)
-        with tf.name_scope('text_encoding_layer'):
+        with tf.compat.v1.name_scope('text_encoding_layer'):
             self.embed_matrix = tf.Variable(
-                tf.random_normal(
+                tf.random.normal(
                     [
                         self.dic_size,
                         self.embed_dim],
@@ -136,9 +124,13 @@ class SingleEncoderModelBi:
                 name='embed_matrix')
 
             self.embed_en_o = tf.nn.embedding_lookup(
-                self.embed_matrix, self.encoder_inputs_o, name='embed_encoder_o')
+                params=self.embed_matrix,
+                ids=self.encoder_inputs_o,
+                name='embed_encoder_o')
             self.embed_en_c = tf.nn.embedding_lookup(
-                self.embed_matrix, self.encoder_inputs_c, name='embed_encoder_c')
+                params=self.embed_matrix,
+                ids=self.encoder_inputs_c,
+                name='embed_encoder_c')
 
             self.encoded_o, self.output_states = add_GRU(
                 inputs=self.embed_en_o,
@@ -172,7 +164,7 @@ class SingleEncoderModelBi:
     def _add_context_gru(self):
         print('[launch] create gru cell for context data, is_bidir: ',
               Params.is_context_bidir)
-        with tf.name_scope('context_encoding_layer') as scope:
+        with tf.compat.v1.name_scope('context_encoding_layer') as scope:
 
             self.encoded_c, self.output_states_c = add_GRU(
                 inputs=self.embed_en_c,
@@ -207,11 +199,11 @@ class SingleEncoderModelBi:
 
         # Apply gated attention recurrent network for both query-passage
         # matching and self matching networks
-        with tf.variable_scope("self-matching"):
+        with tf.compat.v1.variable_scope("self-matching"):
 
             self.params = get_attn_params(
                 self.final_encoder_dimension / 2,
-                initializer=tf.contrib.layers.xavier_initializer)
+                initializer=tf.initializers.GlorotUniform)
 
             memory = self.final_encoding
             inputs = self.final_encoding
@@ -272,7 +264,7 @@ class SingleEncoderModelBi:
         print('[launch-model_util] apply LTC method, N_TOPIC/Mem DIM/LTC_DR: ',
               Params.N_LTC_TOPIC, Params.N_LTC_MEM_DIM, self.ltc_dr)
 
-        with tf.name_scope('text_LTC') as scope:
+        with tf.compat.v1.name_scope('text_LTC') as scope:
             self.final_step, self.final_encoder_dimension = ltc(batch_size=self.batch_size,
                                                                 topic_size=Params.N_LTC_TOPIC,
                                                                 memory_dim=Params.N_LTC_MEM_DIM,
@@ -284,15 +276,13 @@ class SingleEncoderModelBi:
     def _add_ff_layer(self):
         print('[launch] add FF layer to reduce the dim: ', Params.DIM_FF_LAYER)
 
-        with tf.name_scope('text_FF') as scope:
+        with tf.compat.v1.name_scope('text_FF') as scope:
 
-            initializers = tf.contrib.layers.xavier_initializer(
-                uniform=True,
-                seed=None,
-                dtype=tf.float32
-            )
+            initializers = tf.compat.v1.keras.initializers.VarianceScaling(
+                scale=1.0, mode="fan_avg", distribution=(
+                    "uniform" if True else "truncated_normal"), seed=None, dtype=tf.float32)
 
-            self.final_step = tf.contrib.layers.fully_connected(
+            self.final_step = fully_connected(
                 inputs=self.final_step,
                 num_outputs=Params.DIM_FF_LAYER,
                 activation_fn=tf.nn.tanh,
@@ -310,19 +300,18 @@ class SingleEncoderModelBi:
     def _create_output_layers(self):
         print('[launch] create output projection layer')
 
-        with tf.name_scope('text_output_layer') as scope:
+        with tf.compat.v1.name_scope('text_output_layer') as scope:
 
             self.M = tf.Variable(
-                tf.random_uniform(
-                    [
-                        self.final_encoder_dimension,
-                        Params.N_CATEGORY],
+                tf.random.uniform(
+                    [self.final_encoder_dimension, Params.N_CATEGORY],
                     minval=-0.25,
                     maxval=0.25,
                     dtype=tf.float32,
                     seed=None),
                 trainable=True,
-                name="similarity_matrix")
+                name="similarity_matrix"
+            )
 
             self.b = tf.Variable(tf.zeros([Params.N_CATEGORY], dtype=tf.float32),
                                  trainable=True,
@@ -331,11 +320,11 @@ class SingleEncoderModelBi:
             # e * M + b
             self.batch_pred = tf.matmul(self.final_step, self.M) + self.b
 
-        with tf.name_scope('loss') as scope:
+        with tf.compat.v1.name_scope('loss') as scope:
 
             #self.batch_loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=self.batch_pred, labels=self.y_labels )
             self.batch_loss = tf.nn.softmax_cross_entropy_with_logits(
-                logits=self.batch_pred, labels=self.y_labels)
+                logits=self.batch_pred, labels=tf.stop_gradient(self.y_labels))
             self.tmp_batch_loss = self.batch_loss
 
             if Params.is_minority_use:
@@ -344,13 +333,13 @@ class SingleEncoderModelBi:
                 self.batch_loss = tf.maximum(self.batch_loss, 0)
                 self.batch_loss = tf.square(self.batch_loss)
 
-            self.loss = tf.reduce_mean(self.batch_loss)
+            self.loss = tf.reduce_mean(input_tensor=self.batch_loss)
 
     def _create_optimizer(self):
         print('[launch] create optimizer')
 
-        with tf.name_scope('text_optimizer') as scope:
-            opt_func = tf.train.AdamOptimizer(learning_rate=self.lr)
+        with tf.compat.v1.name_scope('text_optimizer') as scope:
+            opt_func = tf.compat.v1.train.AdamOptimizer(learning_rate=self.lr)
             gradients, variables = zip(*opt_func.compute_gradients(self.loss))
             gradients = [None if gradient is None else tf.clip_by_norm(
                 t=gradient, clip_norm=1.0) for gradient in gradients]
@@ -361,9 +350,9 @@ class SingleEncoderModelBi:
     def _create_summary(self):
         print('[launch] create summary')
 
-        with tf.name_scope('summary'):
-            tf.summary.scalar('mean_loss', self.loss)
-            self.summary_op = tf.summary.merge_all()
+        with tf.compat.v1.name_scope('summary'):
+            tf.compat.v1.summary.scalar('mean_loss', self.loss)
+            self.summary_op = tf.compat.v1.summary.merge_all()
 
     def build_graph(self):
         self._create_placeholders()

@@ -5,13 +5,10 @@ what    : Single Encoder Model - bidirectional
 data    : twitter
 """
 import tensorflow as tf
-from tensorflow.contrib import rnn
-from tensorflow.contrib.rnn import DropoutWrapper
 
-from tensorflow.core.framework import summary_pb2
-from random import shuffle
 import numpy as np
-from layers.RNN_params import Params
+from .RNN_params import Params
+from tf_slim.layers import fully_connected
 
 
 class SingleEncoderModelBiSingle:
@@ -72,61 +69,44 @@ class SingleEncoderModelBiSingle:
 
     def _create_placeholders(self):
         print('[launch-text] placeholders')
-        with tf.name_scope('text_placeholder'):
+        with tf.compat.v1.name_scope('text_placeholder'):
 
-            self.encoder_inputs_o = tf.placeholder(
-                tf.int32,
-                shape=[
-                    self.batch_size,
-                    self.encoder_size],
-                name="encoder_o")  # [batch,time_step]
-            self.encoder_seq_o = tf.placeholder(
-                tf.int32,
-                shape=[
-                    self.batch_size],
-                name="encoder_seq_o")  # [batch] - valid word step
+            self.encoder_inputs_o = tf.compat.v1.placeholder(tf.int32, shape=[
+                self.batch_size, self.encoder_size], name="encoder_o")  # [batch,time_step]
+            self.encoder_seq_o = tf.compat.v1.placeholder(tf.int32, shape=[
+                self.batch_size], name="encoder_seq_o")   # [batch] - valid word step
             # self.encoder_type_o    = tf.placeholder(tf.float32,
             # shape=[self.batch_size, 5], name="encoder_type_o")   # [batch] -
             # tweet type 0-5
 
-            self.encoder_inputs_c = tf.placeholder(
-                tf.int32,
-                shape=[
-                    self.batch_size,
-                    self.encoder_size],
-                name="encoder_c")  # [batch,time_step]
-            self.encoder_seq_c = tf.placeholder(
-                tf.int32,
-                shape=[
-                    self.batch_size],
-                name="encoder_seq_c")  # [batch] - valid word step
+            self.encoder_inputs_c = tf.compat.v1.placeholder(tf.int32, shape=[
+                self.batch_size, self.encoder_size], name="encoder_c")  # [batch,time_step]
+            self.encoder_seq_c = tf.compat.v1.placeholder(tf.int32, shape=[
+                self.batch_size], name="encoder_seq_c")   # [batch] - valid word step
             # self.encoder_type_c    = tf.placeholder(tf.float32,
             # shape=[self.batch_size, 5], name="encoder_type_c")   # [batch] -
             # tweet type 0-5
 
-            self.y_labels = tf.placeholder(
+            self.y_labels = tf.compat.v1.placeholder(
                 tf.float32,
                 shape=[
                     self.batch_size,
                     Params.N_CATEGORY],
                 name="label")
 
-            self.dr_prob = tf.placeholder(tf.float32, name="dropout")
-            self.dr_prob_ltc = tf.placeholder(tf.float32, name="dropout_ltc")
+            self.dr_prob = tf.compat.v1.placeholder(tf.float32, name="dropout")
+            self.dr_prob_ltc = tf.compat.v1.placeholder(
+                tf.float32, name="dropout_ltc")
 
             # for using pre-trained embedding
-            self.embedding_placeholder = tf.placeholder(
-                tf.float32,
-                shape=[
-                    self.dic_size,
-                    self.embed_dim],
-                name="embedding_placeholder")
+            self.embedding_placeholder = tf.compat.v1.placeholder(
+                tf.float32, shape=[self.dic_size, self.embed_dim], name="embedding_placeholder")
 
     def _create_embedding(self):
         print('[launch-text] create embedding')
-        with tf.name_scope('embed_layer'):
+        with tf.compat.v1.name_scope('embed_layer'):
             self.embed_matrix = tf.Variable(
-                tf.random_normal(
+                tf.random.normal(
                     [
                         self.dic_size,
                         self.embed_dim],
@@ -138,9 +118,13 @@ class SingleEncoderModelBiSingle:
                 name='embed_matrix')
 
             self.embed_en_o = tf.nn.embedding_lookup(
-                self.embed_matrix, self.encoder_inputs_o, name='embed_encoder_o')
+                params=self.embed_matrix,
+                ids=self.encoder_inputs_o,
+                name='embed_encoder_o')
             self.embed_en_c = tf.nn.embedding_lookup(
-                self.embed_matrix, self.encoder_inputs_c, name='embed_encoder_c')
+                params=self.embed_matrix,
+                ids=self.encoder_inputs_c,
+                name='embed_encoder_c')
 
     def _use_external_embedding(self):
         if self.use_glove == 1:
@@ -151,15 +135,13 @@ class SingleEncoderModelBiSingle:
     # cell instance
 
     def gru_cell(self):
-        return tf.contrib.rnn.GRUCell(num_units=self.hidden_dim)
+        return tf.compat.v1.nn.rnn_cell.GRUCell(num_units=self.hidden_dim)
 
     # cell instance with drop-out wrapper applied
 
     def gru_drop_out_cell(self):
-        return tf.contrib.rnn.DropoutWrapper(
-            self.gru_cell(),
-            input_keep_prob=self.dr_prob,
-            output_keep_prob=self.dr_prob)
+        return tf.compat.v1.nn.rnn_cell.DropoutWrapper(
+            self.gru_cell(), input_keep_prob=self.dr_prob, output_keep_prob=self.dr_prob)
 
     """
     def _create_gru_model(self):
@@ -186,16 +168,16 @@ class SingleEncoderModelBiSingle:
     def _create_gru_model_bi(self):
         print('[launch-text] create gru cell for original data - bidirectional')
 
-        with tf.name_scope('text_RNN') as scope:
+        with tf.compat.v1.name_scope('text_RNN') as scope:
 
-            with tf.variable_scope("text_GRU", reuse=False, initializer=tf.orthogonal_initializer()):
+            with tf.compat.v1.variable_scope("text_GRU", reuse=False, initializer=tf.compat.v1.orthogonal_initializer()):
 
-                cells_en_fw = tf.contrib.rnn.MultiRNNCell(
+                cells_en_fw = tf.compat.v1.nn.rnn_cell.MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
-                cells_en_bw = tf.contrib.rnn.MultiRNNCell(
+                cells_en_bw = tf.compat.v1.nn.rnn_cell.MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
 
-                (self.outputs_o, output_states) = tf.nn.bidirectional_dynamic_rnn(
+                (self.outputs_o, output_states) = tf.compat.v1.nn.bidirectional_dynamic_rnn(
                     cell_fw=cells_en_fw,
                     cell_bw=cells_en_bw,
                     inputs=self.embed_en_o,
@@ -212,7 +194,7 @@ class SingleEncoderModelBiSingle:
         from model_util import luong_attention
         print('[launch-text] apply self-Attention for origianl text')
 
-        with tf.name_scope('text_Attn_self') as scope:
+        with tf.compat.v1.name_scope('text_Attn_self') as scope:
 
             # attn at original text
             self.outputs = self.outputs_o
@@ -221,7 +203,7 @@ class SingleEncoderModelBiSingle:
             fw = self.outputs[0]
 
             # reversed backward output
-            bw = tf.reverse_sequence(self.outputs[1],
+            bw = tf.reverse_sequence(input=self.outputs[1],
                                      seq_lengths=self.encoder_seq_o,
                                      seq_axis=1
                                      )
@@ -252,16 +234,16 @@ class SingleEncoderModelBiSingle:
     def _add_context_gru(self):
         print('[launch-text] create gru cell for context data - bidirectional')
 
-        with tf.name_scope('text_RNN') as scope:
+        with tf.compat.v1.name_scope('text_RNN') as scope:
 
-            with tf.variable_scope("text_GRU", reuse=True, initializer=tf.orthogonal_initializer()):
+            with tf.compat.v1.variable_scope("text_GRU", reuse=True, initializer=tf.compat.v1.orthogonal_initializer()):
 
-                cells_en_fw_c = tf.contrib.rnn.MultiRNNCell(
+                cells_en_fw_c = tf.compat.v1.nn.rnn_cell.MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
-                cells_en_bw_c = tf.contrib.rnn.MultiRNNCell(
+                cells_en_bw_c = tf.compat.v1.nn.rnn_cell.MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
 
-                (self.outputs_c, output_states) = tf.nn.bidirectional_dynamic_rnn(
+                (self.outputs_c, output_states) = tf.compat.v1.nn.bidirectional_dynamic_rnn(
                     cell_fw=cells_en_fw_c,
                     cell_bw=cells_en_bw_c,
                     inputs=self.embed_en_c,
@@ -281,16 +263,16 @@ class SingleEncoderModelBiSingle:
         from model_util import luong_attention
         print('[launch-text] create gru cell for context data - bidirectional for preparing attention info')
 
-        with tf.name_scope('text_RNN') as scope:
+        with tf.compat.v1.name_scope('text_RNN') as scope:
 
-            with tf.variable_scope("text_GRU", reuse=True, initializer=tf.orthogonal_initializer()):
+            with tf.compat.v1.variable_scope("text_GRU", reuse=True, initializer=tf.compat.v1.orthogonal_initializer()):
 
-                cells_en_fw_c = tf.contrib.rnn.MultiRNNCell(
+                cells_en_fw_c = tf.compat.v1.nn.rnn_cell.MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
-                cells_en_bw_c = tf.contrib.rnn.MultiRNNCell(
+                cells_en_bw_c = tf.compat.v1.nn.rnn_cell.MultiRNNCell(
                     [self.gru_drop_out_cell() for _ in range(self.num_layers)])
 
-                (self.outputs_c, output_states) = tf.nn.bidirectional_dynamic_rnn(
+                (self.outputs_c, output_states) = tf.compat.v1.nn.bidirectional_dynamic_rnn(
                     cell_fw=cells_en_fw_c,
                     cell_bw=cells_en_bw_c,
                     inputs=self.embed_en_c,
@@ -302,7 +284,7 @@ class SingleEncoderModelBiSingle:
                 final_encoder_c = self.state_concat_c
 
         print('[launch-text] apply self-Attention with given context vector')
-        with tf.name_scope('text_Attn_con') as scope:
+        with tf.compat.v1.name_scope('text_Attn_con') as scope:
 
             # attn at original text
             self.outputs = self.outputs_o
@@ -311,7 +293,7 @@ class SingleEncoderModelBiSingle:
             fw = self.outputs[0]
 
             # reversed backward output
-            bw = tf.reverse_sequence(self.outputs[1],
+            bw = tf.reverse_sequence(input=self.outputs[1],
                                      seq_lengths=self.encoder_seq_o,
                                      seq_axis=1
                                      )
@@ -329,15 +311,13 @@ class SingleEncoderModelBiSingle:
         print('[launch-text] add FF layer to reduce the dim: ',
               Params.DIM_FF_LAYER)
 
-        with tf.name_scope('text_FF') as scope:
+        with tf.compat.v1.name_scope('text_FF') as scope:
 
-            initializers = tf.contrib.layers.xavier_initializer(
-                uniform=True,
-                seed=None,
-                dtype=tf.float32
-            )
+            initializers = tf.compat.v1.keras.initializers.VarianceScaling(
+                scale=1.0, mode="fan_avg", distribution=(
+                    "uniform" if True else "truncated_normal"), seed=None, dtype=tf.float32)
 
-            self.final_encoder = tf.contrib.layers.fully_connected(
+            self.final_encoder = fully_connected(
                 inputs=self.final_encoder,
                 num_outputs=Params.DIM_FF_LAYER,
                 activation_fn=tf.nn.relu,
@@ -351,25 +331,11 @@ class SingleEncoderModelBiSingle:
 
             self.final_encoder_dimension = Params.DIM_FF_LAYER
 
-    # def _add_type_original(self):
-    #     print ('[launch-text] add tweet type for original')
-
-    #     # result merge
-    #     self.final_encoder = tf.concat( [self.final_encoder, self.encoder_type_o], 1 )
-    #     self.final_encoder_dimension = self.final_encoder_dimension + 5
-
-    # def _add_type_context(self):
-    #     print ('[launch-text] add tweet type for context')
-
-    #     # result merge
-    #     self.final_encoder = tf.concat( [self.final_encoder, self.encoder_type_c], 1 )
-    #     self.final_encoder_dimension = self.final_encoder_dimension + 5
-
     def _add_LTC_method(self):
         from model_util import sy_ltc
         print('[launch-text] apply LTC method')
 
-        with tf.name_scope('text_LTC') as scope:
+        with tf.compat.v1.name_scope('text_LTC') as scope:
             self.final_encoder, self.final_encoder_dimension = sy_ltc(batch_size=self.batch_size,
                                                                       topic_size=4,
                                                                       memory_dim=self.final_encoder_dimension,
@@ -381,10 +347,10 @@ class SingleEncoderModelBiSingle:
     def _create_output_layers(self):
         print('[launch-text] create output projection layer')
 
-        with tf.name_scope('text_output_layer') as scope:
+        with tf.compat.v1.name_scope('text_output_layer') as scope:
 
             self.M = tf.Variable(
-                tf.random_uniform(
+                tf.random.uniform(
                     [
                         self.final_encoder_dimension,
                         Params.N_CATEGORY],
@@ -402,7 +368,7 @@ class SingleEncoderModelBiSingle:
             # e * M + b
             self.batch_pred = tf.matmul(self.final_encoder, self.M) + self.b
 
-        with tf.name_scope('loss') as scope:
+        with tf.compat.v1.name_scope('loss') as scope:
 
             c0 = 36705
             c1 = 8331
@@ -427,16 +393,16 @@ class SingleEncoderModelBiSingle:
                     logits=self.batch_pred, labels=self.y_labels)
                 #self.batch_loss = tf.nn.softmax_cross_entropy_with_logits(logits=self.batch_pred, labels=self.y_labels )
 
-            self.loss = tf.reduce_mean(self.batch_loss)
+            self.loss = tf.reduce_mean(input_tensor=self.batch_loss)
 
     def _create_optimizer(self):
         print('[launch-text] create optimizer')
 
-        with tf.name_scope('text_optimizer') as scope:
+        with tf.compat.v1.name_scope('text_optimizer') as scope:
             #self.optimizer = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(self.loss, global_step=self.global_step)
             #self.optimizer = tf.train.GradientDescentOptimizer(self.lr).minimize(self.loss, global_step=self.global_step)
 
-            opt_func = tf.train.AdamOptimizer(learning_rate=self.lr)
+            opt_func = tf.compat.v1.train.AdamOptimizer(learning_rate=self.lr)
             gvs = opt_func.compute_gradients(self.loss)
             #capped_gvs = [(tf.clip_by_norm(t=grad, clip_norm=1), var) for grad, var in gvs]
             capped_gvs = [
@@ -452,9 +418,9 @@ class SingleEncoderModelBiSingle:
     def _create_summary(self):
         print('[launch-text] create summary')
 
-        with tf.name_scope('summary'):
-            tf.summary.scalar('mean_loss', self.loss)
-            self.summary_op = tf.summary.merge_all()
+        with tf.compat.v1.name_scope('summary'):
+            tf.compat.v1.summary.scalar('mean_loss', self.loss)
+            self.summary_op = tf.compat.v1.summary.merge_all()
 
     def build_graph(self):
         self._create_placeholders()

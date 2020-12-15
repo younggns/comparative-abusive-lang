@@ -15,9 +15,12 @@ from layers.RNN_model_bi import *
 from layers.RNN_evaluation import *
 from layers.RNN_process_data import *
 from layers.RNN_params import Params
-from .utils.rnn import RNNUtil
+from rnn_util import RNNUtil
 
 # for training
+
+tf.compat.v1.disable_v2_behavior()
+tf.compat.v1.disable_eager_execution()
 
 
 def train_step(sess, model, batch_gen):
@@ -56,17 +59,17 @@ def train_model(
         is_save=0,
         graph_dir_name='default'):
 
-    saver = tf.train.Saver()
-    config = tf.ConfigProto()
+    saver = tf.compat.v1.train.Saver()
+    config = tf.compat.v1.ConfigProto()
     config.gpu_options.allow_growth = True
 
     summary = None
     val_summary = None
 
-    with tf.Session(config=config) as sess:
-
-        writer = tf.summary.FileWriter('./graph/' + graph_dir_name, sess.graph)
-        sess.run(tf.global_variables_initializer())
+    with tf.compat.v1.Session(config=config) as sess:
+        writer = tf.compat.v1.summary.FileWriter(
+            './graph/' + graph_dir_name, sess.graph)
+        sess.run(tf.compat.v1.global_variables_initializer())
 
         early_stop_count = Params.MAX_EARLY_STOP_COUNT
 
