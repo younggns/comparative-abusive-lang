@@ -16,6 +16,8 @@ from layers.RNN_model_layers import *
 from layers.RNN_model_GRU import gated_attention_Wrapper
 from layers.RNN_layers import add_GRU
 
+tf.compat.v1.disable_eager_execution()
+
 
 class SingleEncoderModelBi:
 
@@ -281,7 +283,7 @@ class SingleEncoderModelBi:
 
             self.final_step = tf.keras.Sequential([
                 tf.keras.layers.Dense(
-                    self.final_encoder,
+                    self.final_step,
                     activation_fn='tanh',
                     kernel_initializer=initializers,
                     kernel_regularizer=None,
