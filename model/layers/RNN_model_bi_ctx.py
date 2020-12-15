@@ -6,10 +6,9 @@ data    : twitter
 """
 import tensorflow as tf
 
-from tensorflow.core.framework import summary_pb2
-from random import shuffle
 import numpy as np
 from .RNN_params import Params
+from tf_slim.layers import fully_connected
 
 
 class SingleEncoderModelBiSingle:
@@ -76,16 +75,24 @@ class SingleEncoderModelBiSingle:
                 self.batch_size, self.encoder_size], name="encoder_o")  # [batch,time_step]
             self.encoder_seq_o = tf.compat.v1.placeholder(tf.int32, shape=[
                 self.batch_size], name="encoder_seq_o")   # [batch] - valid word step
-            # self.encoder_type_o    = tf.placeholder(tf.float32, shape=[self.batch_size, 5], name="encoder_type_o")   # [batch] - tweet type 0-5
+            # self.encoder_type_o    = tf.placeholder(tf.float32,
+            # shape=[self.batch_size, 5], name="encoder_type_o")   # [batch] -
+            # tweet type 0-5
 
             self.encoder_inputs_c = tf.compat.v1.placeholder(tf.int32, shape=[
                 self.batch_size, self.encoder_size], name="encoder_c")  # [batch,time_step]
             self.encoder_seq_c = tf.compat.v1.placeholder(tf.int32, shape=[
                 self.batch_size], name="encoder_seq_c")   # [batch] - valid word step
-            # self.encoder_type_c    = tf.placeholder(tf.float32, shape=[self.batch_size, 5], name="encoder_type_c")   # [batch] - tweet type 0-5
+            # self.encoder_type_c    = tf.placeholder(tf.float32,
+            # shape=[self.batch_size, 5], name="encoder_type_c")   # [batch] -
+            # tweet type 0-5
 
             self.y_labels = tf.compat.v1.placeholder(
-                tf.float32, shape=[self.batch_size, Params.N_CATEGORY], name="label")
+                tf.float32,
+                shape=[
+                    self.batch_size,
+                    Params.N_CATEGORY],
+                name="label")
 
             self.dr_prob = tf.compat.v1.placeholder(tf.float32, name="dropout")
             self.dr_prob_ltc = tf.compat.v1.placeholder(
@@ -98,18 +105,26 @@ class SingleEncoderModelBiSingle:
     def _create_embedding(self):
         print('[launch-text] create embedding')
         with tf.compat.v1.name_scope('embed_layer'):
-            self.embed_matrix = tf.Variable(tf.random.normal([self.dic_size, self.embed_dim],
-                                                             mean=0.0,
-                                                             stddev=0.01,
-                                                             dtype=tf.float32,
-                                                             seed=None),
-                                            trainable=Params.EMBEDDING_TRAIN,
-                                            name='embed_matrix')
+            self.embed_matrix = tf.Variable(
+                tf.random.normal(
+                    [
+                        self.dic_size,
+                        self.embed_dim],
+                    mean=0.0,
+                    stddev=0.01,
+                    dtype=tf.float32,
+                    seed=None),
+                trainable=Params.EMBEDDING_TRAIN,
+                name='embed_matrix')
 
             self.embed_en_o = tf.nn.embedding_lookup(
-                params=self.embed_matrix, ids=self.encoder_inputs_o, name='embed_encoder_o')
+                params=self.embed_matrix,
+                ids=self.encoder_inputs_o,
+                name='embed_encoder_o')
             self.embed_en_c = tf.nn.embedding_lookup(
-                params=self.embed_matrix, ids=self.encoder_inputs_c, name='embed_encoder_c')
+                params=self.embed_matrix,
+                ids=self.encoder_inputs_c,
+                name='embed_encoder_c')
 
     def _use_external_embedding(self):
         if self.use_glove == 1:
@@ -125,16 +140,17 @@ class SingleEncoderModelBiSingle:
     # cell instance with drop-out wrapper applied
 
     def gru_drop_out_cell(self):
-        return tf.compat.v1.nn.rnn_cell.DropoutWrapper(self.gru_cell(), input_keep_prob=self.dr_prob, output_keep_prob=self.dr_prob)
+        return tf.compat.v1.nn.rnn_cell.DropoutWrapper(
+            self.gru_cell(), input_keep_prob=self.dr_prob, output_keep_prob=self.dr_prob)
 
     """
     def _create_gru_model(self):
         print '[launch-text] create gru cell'
 
         with tf.name_scope('text_RNN') as scope:
-        
+
             with tf.variable_scope("text_GRU", reuse=False, initializer=tf.orthogonal_initializer()):
-                
+
                 cells_en = tf.contrib.rnn.MultiRNNCell( [ self.gru_drop_out_cell() for _ in range(self.num_layers) ] )
 
                 (self.outputs_en, last_states_en) = tf.nn.dynamic_rnn(
@@ -143,9 +159,9 @@ class SingleEncoderModelBiSingle:
                                                     dtype=tf.float32,
                                                     sequence_length=self.encoder_seq_o,
                                                     time_major=False)
-                
+
                 self.final_encoder = last_states_en[-1]
-                
+
         self.final_encoder_dimension   = self.hidden_dim
         """
 
@@ -195,7 +211,7 @@ class SingleEncoderModelBiSingle:
             self.output_concat = tf.concat([fw, bw], 2)
 
             '''
-            # attention memory            
+            # attention memory
             self.attnM = tf.Variable(tf.random_uniform([self.final_encoder_dimension],
                                                        minval= -0.25,
                                                        maxval= 0.25,
@@ -298,23 +314,20 @@ class SingleEncoderModelBiSingle:
         with tf.compat.v1.name_scope('text_FF') as scope:
 
             initializers = tf.compat.v1.keras.initializers.VarianceScaling(
-                scale=1.0,
-                mode="fan_avg",
-                distribution=("uniform" if True else "truncated_normal"), seed=None, dtype=tf.float32
-            )
+                scale=1.0, mode="fan_avg", distribution=(
+                    "uniform" if True else "truncated_normal"), seed=None, dtype=tf.float32)
 
-            self.final_encoder = tf.keras.Sequential([
-                tf.keras.layers.Dense(
-                    self.final_encoder,
-                    activation_fn='relu',
-                    kernel_initializer=initializers,
-                    kernel_regularizer=None,
-                    bias_initializer='zeros',
-                    bias_regularizer=None
-                ),
-                tf.keras.layers.Dense(Params.DIM_FF_LAYER),
-            ])
-            self.final_encoder.trainable = True
+            self.final_encoder = fully_connected(
+                inputs=self.final_encoder,
+                num_outputs=Params.DIM_FF_LAYER,
+                activation_fn=tf.nn.relu,
+                normalizer_fn=None,
+                normalizer_params=None,
+                weights_initializer=initializers,
+                weights_regularizer=None,
+                biases_initializer=tf.zeros_initializer(),
+                biases_regularizer=None,
+                trainable=True)
 
             self.final_encoder_dimension = Params.DIM_FF_LAYER
 
@@ -336,13 +349,17 @@ class SingleEncoderModelBiSingle:
 
         with tf.compat.v1.name_scope('text_output_layer') as scope:
 
-            self.M = tf.Variable(tf.random.uniform([self.final_encoder_dimension, Params.N_CATEGORY],
-                                                   minval=-0.25,
-                                                   maxval=0.25,
-                                                   dtype=tf.float32,
-                                                   seed=None),
-                                 trainable=True,
-                                 name="similarity_matrix")
+            self.M = tf.Variable(
+                tf.random.uniform(
+                    [
+                        self.final_encoder_dimension,
+                        Params.N_CATEGORY],
+                    minval=-0.25,
+                    maxval=0.25,
+                    dtype=tf.float32,
+                    seed=None),
+                trainable=True,
+                name="similarity_matrix")
 
             self.b = tf.Variable(tf.zeros([Params.N_CATEGORY], dtype=tf.float32),
                                  trainable=True,
@@ -356,11 +373,11 @@ class SingleEncoderModelBiSingle:
             c0 = 36705
             c1 = 8331
             c2 = 12922
-            s = float(c0+c1+c2)
+            s = float(c0 + c1 + c2)
             norm = []
-            norm.append(c0/s)
-            norm.append(c1/s)
-            norm.append(c2/s)
+            norm.append(c0 / s)
+            norm.append(c1 / s)
+            norm.append(c2 / s)
 
             if (self.consider_data_bias):
                 print('consider data bias in weight calculation')
@@ -388,8 +405,13 @@ class SingleEncoderModelBiSingle:
             opt_func = tf.compat.v1.train.AdamOptimizer(learning_rate=self.lr)
             gvs = opt_func.compute_gradients(self.loss)
             #capped_gvs = [(tf.clip_by_norm(t=grad, clip_norm=1), var) for grad, var in gvs]
-            capped_gvs = [(tf.clip_by_value(
-                t=grad, clip_value_min=-10, clip_value_max=10), var) for grad, var in gvs]
+            capped_gvs = [
+                (tf.clip_by_value(
+                    t=grad,
+                    clip_value_min=-10,
+                    clip_value_max=10),
+                    var) for grad,
+                var in gvs]
             self.optimizer = opt_func.apply_gradients(
                 grads_and_vars=capped_gvs, global_step=self.global_step)
 
