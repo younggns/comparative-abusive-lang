@@ -21,13 +21,11 @@ from rnn_util import RNNUtil
 
 
 def train_step(sess, model, batch_gen):
-    # raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_type_con, raw_encoder_input_ori, raw_encoder_seq_ori, raw_encoder_type_ori, raw_label = batch_gen.get_batch(
+    # raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_type_con,
+    # raw_encoder_input_ori, raw_encoder_seq_ori, raw_encoder_type_ori,
+    # raw_label = batch_gen.get_batch(
     raw_encoder_input_con, raw_encoder_seq_con, raw_encoder_input_ori, raw_encoder_seq_ori, raw_label = batch_gen.get_batch(
-        data=batch_gen.train_set,
-        batch_size=model.batch_size,
-        encoder_size=model.encoder_size,
-        is_test=False
-    )
+        data=batch_gen.train_set, batch_size=model.batch_size, encoder_size=model.encoder_size, is_test=False)
 
     # prepare data which will be push from pc to placeholder
     input_feed = {}
@@ -50,7 +48,13 @@ def train_step(sess, model, batch_gen):
     return summary
 
 
-def train_model(model, batch_gen, num_train_steps, valid_freq, is_save=0, graph_dir_name='default'):
+def train_model(
+        model,
+        batch_gen,
+        num_train_steps,
+        valid_freq,
+        is_save=0,
+        graph_dir_name='default'):
 
     saver = tf.compat.v1.train.Saver()
     config = tf.compat.v1.ConfigProto()
@@ -62,7 +66,7 @@ def train_model(model, batch_gen, num_train_steps, valid_freq, is_save=0, graph_
     with tf.compat.v1.Session(config=config) as sess:
 
         writer = tf.compat.v1.summary.FileWriter(
-            './graph/'+graph_dir_name, sess.graph)
+            './graph/' + graph_dir_name, sess.graph)
         sess.run(tf.compat.v1.global_variables_initializer())
 
         early_stop_count = Params.MAX_EARLY_STOP_COUNT
@@ -102,10 +106,8 @@ def train_model(model, batch_gen, num_train_steps, valid_freq, is_save=0, graph_
             # run validation
             if (index + 1) % valid_freq == 0:
 
-                dev_ce, dev_accr, dev_f1, dev_zip, dev_summary = run_test(sess=sess,
-                                                                          model=model,
-                                                                          batch_gen=batch_gen,
-                                                                          data=batch_gen.dev_set)
+                dev_ce, dev_accr, dev_f1, dev_zip, dev_summary = run_test(
+                    sess=sess, model=model, batch_gen=batch_gen, data=batch_gen.dev_set)
 
                 writer.add_summary(
                     dev_summary, global_step=model.global_step.eval())
@@ -124,10 +126,8 @@ def train_model(model, batch_gen, num_train_steps, valid_freq, is_save=0, graph_
 
                         early_stop_count = Params.MAX_EARLY_STOP_COUNT
 
-                        test_ce, test_accr, test_f1, test_zip, _ = run_test(sess=sess,
-                                                                            model=model,
-                                                                            batch_gen=batch_gen,
-                                                                            data=batch_gen.test_set)
+                        test_ce, test_accr, test_f1, test_zip, _ = run_test(
+                            sess=sess, model=model, batch_gen=batch_gen, data=batch_gen.test_set)
 
                         best_dev_f1 = dev_f1
                         test_f1_at_best_dev = test_f1
@@ -142,13 +142,25 @@ def train_model(model, batch_gen, num_train_steps, valid_freq, is_save=0, graph_
                         test_f1 = 0
                         early_stop_count = early_stop_count - 1
 
-                    print(str(int((end_time - initial_time)/60)) + " mins" +
-                          " step/seen/itr: " + str(model.global_step.eval()) + "/ " +
-                          str(model.global_step.eval() * model.batch_size) + "/" +
-                          str(round(model.global_step.eval() * model.batch_size / float(len(batch_gen.train_set)), 2)) +
-                          "\tdev: " + '{:.3f}'.format(dev_f1) +
-                          "  test: " + '{:.3f}'.format(test_f1) +
-                          "  loss: " + '{:.2f}'.format(dev_ce))
+                    print(str(int((end_time -
+                                   initial_time) /
+                                  60)) +
+                          " mins" +
+                          " step/seen/itr: " +
+                          str(model.global_step.eval()) +
+                          "/ " +
+                          str(model.global_step.eval() *
+                              model.batch_size) +
+                          "/" +
+                          str(round(model.global_step.eval() *
+                                    model.batch_size /
+                                    float(len(batch_gen.train_set)), 2)) +
+                          "\tdev: " +
+                          '{:.3f}'.format(dev_f1) +
+                          "  test: " +
+                          '{:.3f}'.format(test_f1) +
+                          "  loss: " +
+                          '{:.2f}'.format(dev_ce))
 
         writer.close()
 
@@ -189,7 +201,7 @@ def main(data_path, batch_size, encoder_size, num_layer, hidden_dim,
         create_dir('save/' + graph_dir_name)
 
     create_dir('graph/')
-    create_dir('graph/'+graph_dir_name)
+    create_dir('graph/' + graph_dir_name)
 
     batch_gen = ProcessData(data_path)
     model = SingleEncoderModelBi(
@@ -239,7 +251,7 @@ if __name__ == '__main__':
     args = p.parse_args()
 
     embed_train = ''
-    if Params.EMBEDDING_TRAIN == False:
+    if not Params.EMBEDDING_TRAIN:
         embed_train = 'F'
 
     graph_name = args.graph_prefix + \

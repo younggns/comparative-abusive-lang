@@ -77,16 +77,24 @@ class SingleEncoderModelBi:
                 self.batch_size, self.encoder_size], name="encoder_o")  # [batch,time_step]
             self.encoder_seq_o = tf.compat.v1.placeholder(tf.int32, shape=[
                 self.batch_size], name="encoder_seq_o")   # [batch] - valid word step
-            # self.encoder_type_o    = tf.placeholder(tf.int32, shape=[self.batch_size, 5], name="encoder_type_o")   # [batch] - tweet type 0-5
+            # self.encoder_type_o    = tf.placeholder(tf.int32,
+            # shape=[self.batch_size, 5], name="encoder_type_o")   # [batch] -
+            # tweet type 0-5
 
             self.encoder_inputs_c = tf.compat.v1.placeholder(tf.int32, shape=[
                 self.batch_size, self.encoder_size], name="encoder_c")  # [batch,time_step]
             self.encoder_seq_c = tf.compat.v1.placeholder(tf.int32, shape=[
                 self.batch_size], name="encoder_seq_c")   # [batch] - valid word step
-            # self.encoder_type_c    = tf.placeholder(tf.int32, shape=[self.batch_size, 5], name="encoder_type_c")   # [batch] - tweet type 0-5
+            # self.encoder_type_c    = tf.placeholder(tf.int32,
+            # shape=[self.batch_size, 5], name="encoder_type_c")   # [batch] -
+            # tweet type 0-5
 
             self.y_labels = tf.compat.v1.placeholder(
-                tf.float32, shape=[self.batch_size, Params.N_CATEGORY], name="label")
+                tf.float32,
+                shape=[
+                    self.batch_size,
+                    Params.N_CATEGORY],
+                name="label")
 
             self.dr_prob = tf.compat.v1.placeholder(tf.float32, name="dropout")
             self.dr_prob_ltc = tf.compat.v1.placeholder(
@@ -100,18 +108,26 @@ class SingleEncoderModelBi:
         print('[launch] encoding_ids with GRU, is_bidir: ',
               Params.is_text_encoding_bidir)
         with tf.compat.v1.name_scope('text_encoding_layer'):
-            self.embed_matrix = tf.Variable(tf.random.normal([self.dic_size, self.embed_dim],
-                                                             mean=0.0,
-                                                             stddev=0.01,
-                                                             dtype=tf.float32,
-                                                             seed=None),
-                                            trainable=Params.EMBEDDING_TRAIN,
-                                            name='embed_matrix')
+            self.embed_matrix = tf.Variable(
+                tf.random.normal(
+                    [
+                        self.dic_size,
+                        self.embed_dim],
+                    mean=0.0,
+                    stddev=0.01,
+                    dtype=tf.float32,
+                    seed=None),
+                trainable=Params.EMBEDDING_TRAIN,
+                name='embed_matrix')
 
             self.embed_en_o = tf.nn.embedding_lookup(
-                params=self.embed_matrix, ids=self.encoder_inputs_o, name='embed_encoder_o')
+                params=self.embed_matrix,
+                ids=self.encoder_inputs_o,
+                name='embed_encoder_o')
             self.embed_en_c = tf.nn.embedding_lookup(
-                params=self.embed_matrix, ids=self.encoder_inputs_c, name='embed_encoder_c')
+                params=self.embed_matrix,
+                ids=self.encoder_inputs_c,
+                name='embed_encoder_c')
 
             self.encoded_o, self.output_states = add_GRU(
                 inputs=self.embed_en_o,
@@ -164,7 +180,7 @@ class SingleEncoderModelBi:
         self.final_encoding = tf.concat(
             [self.final_encoding, self.encoded_c], axis=2)
         self.final_step = tf.concat(
-            [self.output_states[-1],  self.output_states_c[-1]], axis=1)
+            [self.output_states[-1], self.output_states_c[-1]], axis=1)
 
         if Params.is_context_bidir:
             self.final_encoder_dimension = self.final_encoder_dimension + self.hidden_dim * 2
@@ -178,11 +194,13 @@ class SingleEncoderModelBi:
     def _add_attention_match_rnn(self):
         print('[launch-model_util] apply self-matching for origianl text')
 
-        # Apply gated attention recurrent network for both query-passage matching and self matching networks
+        # Apply gated attention recurrent network for both query-passage
+        # matching and self matching networks
         with tf.compat.v1.variable_scope("self-matching"):
 
             self.params = get_attn_params(
-                self.final_encoder_dimension/2, initializer=tf.initializers.GlorotUniform)
+                self.final_encoder_dimension / 2,
+                initializer=tf.initializers.GlorotUniform)
 
             memory = self.final_encoding
             inputs = self.final_encoding
@@ -203,9 +221,9 @@ class SingleEncoderModelBi:
                  self.params["W_g"])
             ]
 
-            args = {"num_units": self.final_encoder_dimension/2,
+            args = {"num_units": self.final_encoder_dimension / 2,
                     "memory": memory,
-                    "params": params[1] if self_matching == True else params[0],
+                    "params": params[1] if self_matching else params[0],
                     "self_matching": self_matching,
                     "memory_len": self.memory_len,     # memory 의 seq length
                     "is_training": True,
@@ -213,15 +231,17 @@ class SingleEncoderModelBi:
                     "batch_size": self.batch_size}
 
             #cell = [apply_dropout(gated_attention_Wrapper(**args), size = inputs.shape[-1], is_training = True, dropout=self.dr_prob) for _ in range(2)]
-            cell = [apply_dropout(gated_attention_Wrapper(
-                **args), size=int(inputs.shape[-1]), is_training=True, output_keep_prob=0.8) for _ in range(2)]
+            cell = [apply_dropout(gated_attention_Wrapper(**args),
+                                  size=int(inputs.shape[-1]),
+                                  is_training=True,
+                                  output_keep_prob=0.8) for _ in range(2)]
             inputs, self.output_states = attention_rnn(
                 inputs=inputs,
                 inputs_len=self.inputs_len,    # inputs 의 seq length
-                units=self.final_encoder_dimension/2,
+                units=self.final_encoder_dimension / 2,
                 attn_cell=cell,
                 bidirection=Params.self_matching_bidir,
-                scope=scopes[1] if self_matching == True else scopes[0],
+                scope=scopes[1] if self_matching else scopes[0],
                 is_training=True,
                 dr_prob=self.dr_prob,
                 is_bidir=True)
@@ -256,10 +276,8 @@ class SingleEncoderModelBi:
         with tf.compat.v1.name_scope('text_FF') as scope:
 
             initializers = tf.compat.v1.keras.initializers.VarianceScaling(
-                scale=1.0,
-                mode="fan_avg",
-                distribution=("uniform" if True else "truncated_normal"), seed=None, dtype=tf.float32
-            )
+                scale=1.0, mode="fan_avg", distribution=(
+                    "uniform" if True else "truncated_normal"), seed=None, dtype=tf.float32)
 
             self.final_step = tf.keras.Sequential([
                 tf.keras.layers.Dense(

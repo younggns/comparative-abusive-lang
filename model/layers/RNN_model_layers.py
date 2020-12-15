@@ -21,7 +21,9 @@ W_v^Q.shape:    (attn_size, attn_size)
 '''
 
 
-def get_attn_params(attn_size, initializer=tf.compat.v1.truncated_normal_initializer):
+def get_attn_params(
+        attn_size,
+        initializer=tf.compat.v1.truncated_normal_initializer):
     '''
     Args:
         attn_size: the size of attention specified in https://www.microsoft.com/en-us/research/wp-content/uploads/2017/05/r-net.pdf
@@ -46,14 +48,20 @@ def get_attn_params(attn_size, initializer=tf.compat.v1.truncated_normal_initial
         return params
 
 
-def apply_dropout(inputs, size=None, is_training=True, input_keep_prob=1.0, output_keep_prob=1.0):
+def apply_dropout(
+        inputs,
+        size=None,
+        is_training=True,
+        input_keep_prob=1.0,
+        output_keep_prob=1.0):
     '''
     Implementation of Zoneout from https://arxiv.org/pdf/1606.01305.pdf
     '''
     if ((input_keep_prob == 1.0) & (output_keep_prob == 1.0)):
         return inputs
     # if Params.zoneout is not None:
-    #    return ZoneoutWrapper(inputs, state_zoneout_prob= Params.zoneout, is_training = is_training)
+    # return ZoneoutWrapper(inputs, state_zoneout_prob= Params.zoneout,
+    # is_training = is_training)
     elif is_training:
         return tf.compat.v1.nn.rnn_cell.DropoutWrapper(
             inputs,
@@ -66,7 +74,20 @@ def apply_dropout(inputs, size=None, is_training=True, input_keep_prob=1.0, outp
         return inputs
 
 
-def bidirectional_GRU(inputs, inputs_len, cell=None, cell_fn=tf.compat.v1.nn.rnn_cell.GRUCell, units=0, layers=1, scope="Bidirectional_GRU", output=0, is_training=True, reuse=None, dr_input_keep_prob=1.0, dr_output_keep_prob=1.0, is_bidir=False):
+def bidirectional_GRU(
+        inputs,
+        inputs_len,
+        cell=None,
+        cell_fn=tf.compat.v1.nn.rnn_cell.GRUCell,
+        units=0,
+        layers=1,
+        scope="Bidirectional_GRU",
+        output=0,
+        is_training=True,
+        reuse=None,
+        dr_input_keep_prob=1.0,
+        dr_output_keep_prob=1.0,
+        is_bidir=False):
     '''
     Bidirectional recurrent neural network with GRU cells.
 
@@ -84,16 +105,22 @@ def bidirectional_GRU(inputs, inputs_len, cell=None, cell_fn=tf.compat.v1.nn.rnn
             if len(shapes) > 3:
                 print('input reshaped!!!')
                 inputs = tf.reshape(
-                    inputs, (shapes[0]*shapes[1], shapes[2], -1))
-                inputs_len = tf.reshape(inputs_len, (shapes[0]*shapes[1],))
+                    inputs, (shapes[0] * shapes[1], shapes[2], -1))
+                inputs_len = tf.reshape(inputs_len, (shapes[0] * shapes[1],))
 
             # if no cells are provided, use standard GRU cell implementation
             if layers > 1:
-                cell_fw = MultiRNNCell([apply_dropout(cell_fn(units), size=inputs.shape[-1] if i == 0 else units, is_training=is_training,
-                                                      input_keep_prob=dr_input_keep_prob, output_keep_prob=dr_output_keep_prob) for i in range(layers)])
+                cell_fw = MultiRNNCell([apply_dropout(cell_fn(units),
+                                                      size=inputs.shape[-1] if i == 0 else units,
+                                                      is_training=is_training,
+                                                      input_keep_prob=dr_input_keep_prob,
+                                                      output_keep_prob=dr_output_keep_prob) for i in range(layers)])
                 if is_bidir:
-                    cell_bw = MultiRNNCell([apply_dropout(cell_fn(units), size=inputs.shape[-1] if i == 0 else units, is_training=is_training,
-                                                          input_keep_prob=dr_input_keep_prob, output_keep_prob=dr_output_keep_prob) for i in range(layers)])
+                    cell_bw = MultiRNNCell([apply_dropout(cell_fn(units),
+                                                          size=inputs.shape[-1] if i == 0 else units,
+                                                          is_training=is_training,
+                                                          input_keep_prob=dr_input_keep_prob,
+                                                          output_keep_prob=dr_output_keep_prob) for i in range(layers)])
             else:
                 cell_fw = apply_dropout(
                     cell_fn(units), size=inputs.shape[-1], is_training=is_training)
@@ -130,7 +157,16 @@ def bidirectional_GRU(inputs, inputs_len, cell=None, cell_fn=tf.compat.v1.nn.rnn
             return outputs, states
 
 
-def attention_rnn(inputs, inputs_len, units, attn_cell, bidirection=True, scope="gated_attention_rnn", is_training=True, dr_prob=1.0, is_bidir=False):
+def attention_rnn(
+        inputs,
+        inputs_len,
+        units,
+        attn_cell,
+        bidirection=True,
+        scope="gated_attention_rnn",
+        is_training=True,
+        dr_prob=1.0,
+        is_bidir=False):
     with tf.compat.v1.variable_scope(scope):
         if bidirection:
             outputs, last_states = bidirectional_GRU(
@@ -147,14 +183,22 @@ def attention_rnn(inputs, inputs_len, units, attn_cell, bidirection=True, scope=
                 is_bidir=True
             )
         else:
-            outputs, last_states = tf.compat.v1.nn.dynamic_rnn(attn_cell, inputs,
-                                                               sequence_length=inputs_len,
-                                                               dtype=tf.float32)
+            outputs, last_states = tf.compat.v1.nn.dynamic_rnn(
+                attn_cell, inputs, sequence_length=inputs_len, dtype=tf.float32)
 
         return outputs, last_states
 
 
-def gated_attention(memory, inputs, states, units, params, self_matching=False, memory_len=None, scope="gated_attention", batch_size=0):
+def gated_attention(
+        memory,
+        inputs,
+        states,
+        units,
+        params,
+        self_matching=False,
+        memory_len=None,
+        scope="gated_attention",
+        batch_size=0):
     with tf.compat.v1.variable_scope(scope):
         weights, W_g = params
         inputs_ = [memory, inputs]
@@ -177,7 +221,14 @@ def mask_attn_score(score, memory_sequence_length, score_mask_value=-1e8):
     return tf.compat.v1.where(score_mask, score, score_mask_values)
 
 
-def attention(inputs, units, weights, scope="attention", memory_len=None, reuse=None, batch_size=0):
+def attention(
+        inputs,
+        units,
+        weights,
+        scope="attention",
+        memory_len=None,
+        reuse=None,
+        batch_size=0):
     with tf.compat.v1.variable_scope(scope, reuse=reuse):
         outputs_ = []
         weights, v = weights
@@ -185,10 +236,16 @@ def attention(inputs, units, weights, scope="attention", memory_len=None, reuse=
             shapes = inp.shape.as_list()
             inp = tf.reshape(inp, (-1, shapes[-1]))
             if w is None:
-                w = tf.compat.v1.get_variable("w_%d" % i, dtype=tf.float32, shape=[
-                    shapes[-1], units], initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform"))
+                w = tf.compat.v1.get_variable("w_%d" % i,
+                                              dtype=tf.float32,
+                                              shape=[shapes[-1],
+                                                     units],
+                                              initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0,
+                                                                                                          mode="fan_avg",
+                                                                                                          distribution="uniform"))
             outputs = tf.matmul(inp, w)
-            # Hardcoded attention output reshaping. Equation (4), (8), (9) and (11) in the original paper.
+            # Hardcoded attention output reshaping. Equation (4), (8), (9) and
+            # (11) in the original paper.
             if len(shapes) > 2:
                 outputs = tf.reshape(outputs, (shapes[0], shapes[1], -1))
             elif len(shapes) == 2 and shapes[0] is batch_size:
@@ -198,8 +255,12 @@ def attention(inputs, units, weights, scope="attention", memory_len=None, reuse=
             outputs_.append(outputs)
         outputs = sum(outputs_)
 
-        b = tf.compat.v1.get_variable(
-            "b", shape=outputs.shape[-1], dtype=tf.float32, initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform"))
+        b = tf.compat.v1.get_variable("b",
+                                      shape=outputs.shape[-1],
+                                      dtype=tf.float32,
+                                      initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0,
+                                                                                                  mode="fan_avg",
+                                                                                                  distribution="uniform"))
         outputs += b
 
         scores = tf.reduce_sum(input_tensor=tf.tanh(outputs) * v, axis=[-1])
