@@ -284,7 +284,7 @@ class SingleEncoderModelBi:
             self.final_step = tf.keras.Sequential([
                 tf.keras.layers.Dense(
                     self.final_step,
-                    activation_fn='tanh',
+                    activation='tanh',
                     kernel_initializer=initializers,
                     kernel_regularizer=None,
                     bias_initializer='zeros',
