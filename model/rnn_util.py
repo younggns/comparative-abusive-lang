@@ -30,7 +30,7 @@ def save_result(
         f.write(result_header)
 
         # Write results
-        for index, accuracy, recall, f1 in enumerate(
+        for index, (accuracy, recall, f1) in enumerate(
                 zip(accr_class, recall_class, f1_class)):
             f.write(create_result(
                 title=index,
