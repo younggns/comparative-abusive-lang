@@ -8,9 +8,9 @@ import tensorflow as tf
 import tensorflow_hub as hub
 from transformers import BertTokenizer
 from enum import Enum, auto
-
+from tensorflow.keras.models import Model
 from collections import Counter
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 
 class EmbeddingMode(Enum):
