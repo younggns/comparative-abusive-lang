@@ -211,7 +211,7 @@ def gen_word_embeddings(mode: EmbeddingMode, path):
                 glove_embedding_matrix[vocab["word2id"]
                                        [word]] = np.zeros(embedding_dim)
             else:
-                tokens = f"[CLS]{tokenizer.tokenize(word)}[SEP]"
+                tokens = ['[CLS]'] + tokenizer.tokenize(word) + ['[SEP]']
                 input_ids = get_ids(tokens, tokenizer, max_seq_length=128)
                 input_masks = get_masks(tokens, max_seq_length=128)
                 input_segments = get_segments(tokens, max_seq_length=128)
@@ -340,14 +340,14 @@ def load_data_splits() -> Dict[str, Any]:
         return pickle.load(f)
 
 
-def get_masks(tokens, max_seq_length):
+def get_masks(tokens, max_seq_length: int):
     """Mask for padding"""
     if len(tokens) > max_seq_length:
         raise IndexError("Token length more than max seq length!")
     return [1] * len(tokens) + [0] * (max_seq_length - len(tokens))
 
 
-def get_segments(tokens, max_seq_length):
+def get_segments(tokens, max_seq_length: int):
     """Segments: 0 for the first sequence, 1 for the second"""
     if len(tokens) > max_seq_length:
         raise IndexError("Token length more than max seq length!")
@@ -360,7 +360,7 @@ def get_segments(tokens, max_seq_length):
     return segments + [0] * (max_seq_length - len(tokens))
 
 
-def get_ids(tokens, tokenizer, max_seq_length):
+def get_ids(tokens: List[str], tokenizer: BertTokenizer, max_seq_length: int):
     """Token ids from Tokenizer vocab"""
     token_ids: Union[List[int],
                      int] = tokenizer.convert_tokens_to_ids(tokens=tokens)
