@@ -6,11 +6,12 @@ import pickle
 import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
+import itertools
 from transformers import BertTokenizer
 from enum import Enum, auto
 from tensorflow.keras.models import Model
 from collections import Counter
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 
 class EmbeddingMode(Enum):
@@ -361,7 +362,8 @@ def get_segments(tokens, max_seq_length):
 
 def get_ids(tokens, tokenizer, max_seq_length):
     """Token ids from Tokenizer vocab"""
-    token_ids = tokenizer.convert_tokens_to_ids(tokens)
+    token_ids: List[int] = list(itertools.chain.from_iterable(
+        [tokenizer.convert_tokens_to_ids(tokens)]))
     input_ids = token_ids + [0] * (max_seq_length - len(token_ids))
     return input_ids
 
