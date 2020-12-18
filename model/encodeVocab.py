@@ -4,7 +4,9 @@ import sys
 import argparse
 import pickle
 import numpy as np
-from transformers import BertTokenizer, BertForSequenceClassification
+import tensorflow as tf
+import tensorflow_hub as hub
+from transformers import BertTokenizer
 from enum import Enum, auto
 
 from collections import Counter
@@ -170,28 +172,53 @@ def gen_word_embeddings(mode: EmbeddingMode, path):
 
     # Bert embeddings
     elif mode == EmbeddingMode.BERT:
-        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-
         print("Generating bert embedding.")
+
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        max_seq_length = 128  # Your choice here.
+        input_word_ids = tf.keras.layers.Input(
+            shape=(max_seq_length,), dtype=tf.int32, name="input_word_ids")
+        input_mask = tf.keras.layers.Input(
+            shape=(
+                max_seq_length,
+            ),
+            dtype=tf.int32,
+            name="input_mask")
+        segment_ids = tf.keras.layers.Input(
+            shape=(
+                max_seq_length,
+            ),
+            dtype=tf.int32,
+            name="segment_ids")
+        bert_layer = hub.KerasLayer(
+            "https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/1",
+            trainable=True)
+        pooled_output, sequence_output = bert_layer(
+            [input_word_ids, input_mask, segment_ids])
+
+        model = Model(
+            inputs=[
+                input_word_ids,
+                input_mask,
+                segment_ids],
+            outputs=[
+                pooled_output,
+                sequence_output])
+
         for word in vocab["word2id"]:
             if word == "PAD":
                 glove_embedding_matrix[vocab["word2id"]
                                        [word]] = np.zeros(embedding_dim)
             else:
-                tokenized_text = tokenizer.tokenize(f"[CLS]{word}[SEP]")
-                indexed_tokens = tokenizer.convert_tokens_to_ids(
-                    tokenized_text)
-                tokens_tensor = torch.tensor([indexed_tokens])
-                model = BertForSequenceClassification.from_pretrained(
-                    'bert-base-cased',
-                    output_hidden_states=True,
-                )
-                model.eval()
+                tokens = f"[CLS]{tokenizer.tokenize(word)}[SEP]"
+                input_ids = get_ids(tokens, tokenizer, max_seq_length=128)
+                input_masks = get_masks(tokens, max_seq_length=128)
+                input_segments = get_segments(tokens, max_seq_length=128)
 
-                with torch.no_grad():  # 勾配計算なし
-                    all_encoder_layers = model(tokens_tensor)
+                pool_embeddings, all_embeddings = model.predict(
+                    [[input_ids], [input_masks], [input_segments]])
 
-                embedding = all_encoder_layers[1][-2].numpy()[0]
+                embedding = all_embeddings
 
                 glove_embedding_matrix[vocab["word2id"]
                                        [word]] = np.mean(embedding, axis=0)
@@ -310,6 +337,33 @@ def load_data_splits() -> Dict[str, Any]:
     data_path = os.path.dirname(os.path.abspath(__file__)) + "/../data"
     with open(data_path + "/data_splits.pkl", "rb") as f:
         return pickle.load(f)
+
+
+def get_masks(tokens, max_seq_length):
+    """Mask for padding"""
+    if len(tokens) > max_seq_length:
+        raise IndexError("Token length more than max seq length!")
+    return [1] * len(tokens) + [0] * (max_seq_length - len(tokens))
+
+
+def get_segments(tokens, max_seq_length):
+    """Segments: 0 for the first sequence, 1 for the second"""
+    if len(tokens) > max_seq_length:
+        raise IndexError("Token length more than max seq length!")
+    segments = []
+    current_segment_id = 0
+    for token in tokens:
+        segments.append(current_segment_id)
+        if token == "[SEP]":
+            current_segment_id = 1
+    return segments + [0] * (max_seq_length - len(tokens))
+
+
+def get_ids(tokens, tokenizer, max_seq_length):
+    """Token ids from Tokenizer vocab"""
+    token_ids = tokenizer.convert_tokens_to_ids(tokens)
+    input_ids = token_ids + [0] * (max_seq_length - len(token_ids))
+    return input_ids
 
 
 if __name__ == "__main__":
