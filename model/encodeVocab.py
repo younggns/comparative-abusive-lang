@@ -10,7 +10,7 @@ from transformers import BertTokenizer
 from enum import Enum, auto
 
 from collections import Counter
-from typing import Final, List, Dict, Any
+from typing import List, Dict, Any
 
 
 class EmbeddingMode(Enum):
@@ -245,7 +245,7 @@ def gen_word_embeddings(mode: EmbeddingMode, path):
 
 
 def char_embedding(text, max_len=140):
-    features: Final[List[str]] = list(
+    features = list(
         "abcdefghijklmnopqrstuvwxyz0123456789 \u2014,;.!?:\u201c\u201d’/|_@#$%ˆ&*~‘+-=<>()[]{}")
     _text = ""
     for c in list(text):
