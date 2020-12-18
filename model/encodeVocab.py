@@ -6,8 +6,8 @@ import pickle
 import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
-import itertools
-from transformers import BertTokenizer
+from official.nlp import bert
+from official.nlp.bert.tokenization import FullTokenizer
 from enum import Enum, auto
 from tensorflow.keras.models import Model
 from collections import Counter
@@ -147,9 +147,8 @@ def gen_word_embeddings(mode: EmbeddingMode, path):
         vocab_size = len(vocab["word2id"].keys())
         print("Vocabulary loaded with %s words" % vocab_size)
 
-    glove_embedding_matrix = np.zeros((vocab_size, embedding_dim))
-
     if mode == EmbeddingMode.GLOVE:
+        glove_embedding_matrix = np.zeros((vocab_size, embedding_dim))
         glove = {}
         print("Loading pre-trained embedding.")
         f = open(path + "/../../glove.840B.300d.txt")
@@ -175,56 +174,26 @@ def gen_word_embeddings(mode: EmbeddingMode, path):
     elif mode == EmbeddingMode.BERT:
         print("Generating bert embedding.")
 
-        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        max_seq_length = 128  # Your choice here.
-        input_word_ids = tf.keras.layers.Input(
-            shape=(max_seq_length,), dtype=tf.int32, name="input_word_ids")
-        input_mask = tf.keras.layers.Input(
-            shape=(
-                max_seq_length,
-            ),
-            dtype=tf.int32,
-            name="input_mask")
-        segment_ids = tf.keras.layers.Input(
-            shape=(
-                max_seq_length,
-            ),
-            dtype=tf.int32,
-            name="segment_ids")
-        bert_layer = hub.KerasLayer(
-            "https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/1",
-            trainable=True)
-        pooled_output, sequence_output = bert_layer(
-            [input_word_ids, input_mask, segment_ids])
-
-        model = Model(
-            inputs=[
-                input_word_ids,
-                input_mask,
-                segment_ids],
-            outputs=[
-                pooled_output,
-                sequence_output])
+        bert_embedding_matrix = np.zeros((vocab_size, embedding_dim))
+        # Load tokenizer
+        tokenizer = FullTokenizer(
+            vocab_file="gs://cloud-tpu-checkpoints/bert/keras_bert/uncased_L-12_H-768_A-12/vocab.txt",
+            do_lower_case=True)
+        print(f"Vocab size: {len(tokenizer.vocab)}")
 
         for word in vocab["word2id"]:
             if word == "PAD":
-                glove_embedding_matrix[vocab["word2id"]
-                                       [word]] = np.zeros(embedding_dim)
+                bert_embedding_matrix[vocab["word2id"]
+                                      [word]] = np.zeros(embedding_dim)
             else:
-                tokens = ['[CLS]'] + tokenizer.tokenize(word) + ['[SEP]']
-                input_ids = get_ids(tokens, tokenizer, max_seq_length=128)
-                input_masks = get_masks(tokens, max_seq_length=128)
-                input_segments = get_segments(tokens, max_seq_length=128)
+                # tokenize
+                tokens = tokenizer.tokenize(word)
+                ids = tokenizer.convert_tokens_to_ids(tokens)
 
-                pool_embeddings, all_embeddings = model.predict(
-                    [[input_ids], [input_masks], [input_segments]])
+                bert_embedding_matrix[vocab["word2id"]
+                                      [word]] = ids
 
-                embedding = all_embeddings
-
-                glove_embedding_matrix[vocab["word2id"]
-                                       [word]] = np.mean(embedding, axis=0)
-
-        np.save(path + "/embedding.npy", glove_embedding_matrix)
+        np.save(path + "/embedding.npy", bert_embedding_matrix)
 
     elif mode == EmbeddingMode.OTHER:
         print("Generating random embedding.")
@@ -338,37 +307,6 @@ def load_data_splits() -> Dict[str, Any]:
     data_path = os.path.dirname(os.path.abspath(__file__)) + "/../data"
     with open(data_path + "/data_splits.pkl", "rb") as f:
         return pickle.load(f)
-
-
-def get_masks(tokens, max_seq_length: int):
-    """Mask for padding"""
-    if len(tokens) > max_seq_length:
-        raise IndexError("Token length more than max seq length!")
-    return [1] * len(tokens) + [0] * (max_seq_length - len(tokens))
-
-
-def get_segments(tokens, max_seq_length: int):
-    """Segments: 0 for the first sequence, 1 for the second"""
-    if len(tokens) > max_seq_length:
-        raise IndexError("Token length more than max seq length!")
-    segments = []
-    current_segment_id = 0
-    for token in tokens:
-        segments.append(current_segment_id)
-        if token == "[SEP]":
-            current_segment_id = 1
-    return segments + [0] * (max_seq_length - len(tokens))
-
-
-def get_ids(tokens: List[str], tokenizer: BertTokenizer, max_seq_length: int):
-    """Token ids from Tokenizer vocab"""
-    token_ids: Union[List[int],
-                     int] = tokenizer.convert_tokens_to_ids(tokens=tokens)
-    if isinstance(token_ids, int):
-        token_ids = [token_ids]
-
-    input_ids = token_ids + [0] * (max_seq_length - len(token_ids))
-    return input_ids
 
 
 if __name__ == "__main__":
