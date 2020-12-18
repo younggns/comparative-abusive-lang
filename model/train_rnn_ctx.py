@@ -4,7 +4,6 @@
 what    : train RNN context
 data    : twitter
 """
-import tensorflow as tf
 import os
 import time
 import argparse
@@ -14,7 +13,7 @@ from layers.RNN_model_bi_ctx import *
 from layers.RNN_process_data_ctx import *
 from layers.RNN_evaluation import *
 from layers.RNN_params import Params
-from rnn_util import RNNUtil
+from rnn_util import save_result
 
 
 # for training
@@ -167,7 +166,7 @@ def train_model(
         print(accr_class, recall_class, f1_class)
 
         # result logging to file
-        RNNUtil().saveResult(
+        save_result(
             batch_gen,
             graph_dir_name,
             accr_class,

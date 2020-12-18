@@ -4,7 +4,6 @@
 what    : train RNN-LTC model (word-level)
 data    : twitter
 """
-import tensorflow as tf
 import os
 import time
 import argparse
@@ -15,7 +14,7 @@ from layers.RNN_model_bi import *
 from layers.RNN_evaluation import *
 from layers.RNN_process_data import *
 from layers.RNN_params import Params
-from rnn_util import RNNUtil
+from rnn_util import save_result
 
 # for training
 
@@ -174,7 +173,7 @@ def train_model(
         print(accr_class, recall_class, f1_class)
 
         # result logging to file
-        RNNUtil().saveResult(
+        save_result(
             batch_gen,
             graph_dir_name,
             accr_class,
