@@ -2,15 +2,13 @@ import helper
 import os
 import sys
 import argparse
-import time
-from datetime import datetime
 import pickle
 import numpy as np
 from transformers import BertTokenizer, BertForSequenceClassification
-import torch
 from enum import Enum, auto
 
 from collections import Counter
+from typing import Final, List, Dict, Any
 
 
 class EmbeddingMode(Enum):
@@ -19,7 +17,7 @@ class EmbeddingMode(Enum):
     OTHER = auto()
 
     @classmethod
-    def fromStr(cls, string: str):
+    def from_str(cls, string: str):
         lowered_string = string.lower()
 
         if lowered_string == 'glove':
@@ -39,9 +37,11 @@ class EmbeddingMode(Enum):
 
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
-###################################################################################
-############################## Word Vocab Generation ##############################
-###################################################################################
+
+
+##########################################################################
+############################## Word Vocab Generation #####################
+##########################################################################
 
 
 def tokens2id(tokens, word2id, max_len):
@@ -78,7 +78,7 @@ def idx_representations_of_text(text_list, context_list, word2id, max_len, k):
     return idx_data_list
 
 
-def genWordVocab(text_data, context_data, k):
+def gen_word_vocab(text_data, context_data, k):
     splits = ["train", "valid", "test"]
     ##### Convert tab-separated tweets into list of tokens #####
     text_word_list, ctxt_word_list = [], []
@@ -135,12 +135,11 @@ def genWordVocab(text_data, context_data, k):
     return id2word, word2id, ctxt_text_idx
 
 
-def genWordEmbeddings(mode: EmbeddingMode, path):
-
+def gen_word_embeddings(mode: EmbeddingMode, path):
     print(f'Mode: {mode}')
 
     embedding_dim = 300
-    with open(path+"/vocab.pkl", "rb") as f:
+    with open(path + "/vocab.pkl", "rb") as f:
         vocab = pickle.load(f)
         vocab_size = len(vocab["word2id"].keys())
         print("Vocabulary loaded with %s words" % vocab_size)
@@ -150,7 +149,7 @@ def genWordEmbeddings(mode: EmbeddingMode, path):
     if mode == EmbeddingMode.GLOVE:
         glove = {}
         print("Loading pre-trained embedding.")
-        f = open(path+"/../../glove.840B.300d.txt")
+        f = open(path + "/../../glove.840B.300d.txt")
         for line in f:
             values = line.split()
             word = ' '.join(values[:-embedding_dim])
@@ -167,7 +166,7 @@ def genWordEmbeddings(mode: EmbeddingMode, path):
                 glove_embedding_matrix[vocab["word2id"][word]] = np.random.normal(
                     0, 0.01, embedding_dim)
 
-        np.save(path+"/embedding.npy", glove_embedding_matrix)
+        np.save(path + "/embedding.npy", glove_embedding_matrix)
 
     # Bert embeddings
     elif mode == EmbeddingMode.BERT:
@@ -185,18 +184,19 @@ def genWordEmbeddings(mode: EmbeddingMode, path):
                 tokens_tensor = torch.tensor([indexed_tokens])
                 model = BertForSequenceClassification.from_pretrained(
                     'bert-base-cased',
-                    output_hidden_states = True,
+                    output_hidden_states=True,
                 )
                 model.eval()
 
-                with torch.no_grad(): # 勾配計算なし
+                with torch.no_grad():  # 勾配計算なし
                     all_encoder_layers = model(tokens_tensor)
 
                 embedding = all_encoder_layers[1][-2].numpy()[0]
 
-                glove_embedding_matrix[vocab["word2id"][word]] = np.mean(embedding, axis=0)
+                glove_embedding_matrix[vocab["word2id"]
+                                       [word]] = np.mean(embedding, axis=0)
 
-        np.save(path+"/embedding.npy", glove_embedding_matrix)
+        np.save(path + "/embedding.npy", glove_embedding_matrix)
 
     elif mode == EmbeddingMode.OTHER:
         print("Generating random embedding.")
@@ -207,21 +207,22 @@ def genWordEmbeddings(mode: EmbeddingMode, path):
             else:
                 glove_embedding_matrix[vocab["word2id"][word]] = np.random.normal(
                     0, 0.01, embedding_dim)
-        np.save(path+"/embedding.npy", glove_embedding_matrix)
+        np.save(path + "/embedding.npy", glove_embedding_matrix)
     else:
         print(f"Embedding mode not found: {mode}")
 
-###################################################################################
-############################## Char Vocab Generation ##############################
-###################################################################################
+
+##########################################################################
+############################## Char Vocab Generation #####################
+##########################################################################
 
 
-def charEmbedding(text, max_len=140):
-    FEATURES = list(
+def char_embedding(text, max_len=140):
+    features: Final[List[str]] = list(
         "abcdefghijklmnopqrstuvwxyz0123456789 \u2014,;.!?:\u201c\u201d’/|_@#$%ˆ&*~‘+-=<>()[]{}")
     _text = ""
     for c in list(text):
-        if c in FEATURES:
+        if c in features:
             _text += c
     tokens = list(_text)
     vector = -np.ones(max_len)
@@ -229,7 +230,7 @@ def charEmbedding(text, max_len=140):
     for i, t in enumerate(tokens):
         if i < max_len:
             try:
-                j = FEATURES.index(t)
+                j = features.index(t)
             except ValueError:
                 j = -1
                 print("value error")
@@ -238,7 +239,7 @@ def charEmbedding(text, max_len=140):
     return vector
 
 
-def genCharVocab(text_data, context_data, k):
+def gen_char_vocab(text_data, context_data, k):
     _text_data, _ctxt_data = [], []
     splits = ["train", "valid", "test"]
     for index in range(k):
@@ -249,23 +250,24 @@ def genCharVocab(text_data, context_data, k):
     for index in range(k):
         for split in splits:
             for text in text_data[index][split]:
-                _vector = charEmbedding(text)
+                _vector = char_embedding(text)
                 _text_data[index][split].append(_vector)
             for context in context_data[index][split]:
-                _vector = charEmbedding(context)
+                _vector = char_embedding(context)
                 _ctxt_data[index][split].append(_vector)
 
     return _text_data, _ctxt_data
 
-#######################################################################################
-############################## Generating Numpy of Input ##############################
-#######################################################################################
+
+##########################################################################
+############################## Generating Numpy of Input #################
+##########################################################################
 
 
 def save_kfold_npy(data_list, name, path, k):
-    file_format = path+"/%s/%s_%s.npy"
+    file_format = path + "/%s/%s_%s.npy"
     for i in range(k):
-        fold_path = path+"/"+str(i)
+        fold_path = path + "/" + str(i)
         if not os.path.exists(fold_path):
             os.makedirs(fold_path)
         for key in data_list[i].keys():
@@ -275,46 +277,50 @@ def save_kfold_npy(data_list, name, path, k):
             # print("Saved in %s. %s" % (file_name, str(array.shape)))
 
 
-def processWordVocab(target_path, mode: EmbeddingMode, k):
+def process_word_vocab(target_path, mode: EmbeddingMode, k):
     print("Processing word vocab....")
     data_path = os.path.dirname(os.path.abspath(__file__)) + "/../data"
-    with open(data_path+"/data_splits.pkl", "rb") as f:
+    with open(data_path + "/data_splits.pkl", "rb") as f:
         _data = pickle.load(f)
     _text_split, _ctxt_split, _label_split = _data["text_data"], _data["context_data"], _data["label_data"]
-    id2word, word2id, ctxt_text_idx = genWordVocab(_text_split, _ctxt_split, k)
+    id2word, word2id, ctxt_text_idx = gen_word_vocab(
+        _text_split, _ctxt_split, k)
 
     save_kfold_npy(ctxt_text_idx, "CtxtText_InputText", target_path, k)
     save_kfold_npy(_label_split, "Label", target_path, k)
 
-    with open(target_path+"/vocab.pkl", "wb") as f:
+    with open(target_path + "/vocab.pkl", "wb") as f:
         pickle.dump({"word2id": word2id, "id2word": id2word}, f)
     print("Done creating vocabulary pickles")
 
-    genWordEmbeddings(mode, target_path)
+    gen_word_embeddings(mode, target_path)
 
 
-def processCharVocab(target_path, k):
+def process_char_vocab(target_path, k):
     print("Processing char vocab....")
-    data_path = os.path.dirname(os.path.abspath(__file__)) + "/../data"
-    with open(data_path+"/data_splits.pkl", "rb") as f:
-        _data = pickle.load(f)
+    _data = load_data_splits()
     _text_split, _ctxt_split, _label_split = _data["text_data"], _data["context_data"], _data["label_data"]
-    text_data, ctxt_data = genCharVocab(_text_split, _ctxt_split, k)
+    text_data, ctxt_data = gen_char_vocab(_text_split, _ctxt_split, k)
     save_kfold_npy(text_data, "Char_InputText", target_path, k)
     save_kfold_npy(ctxt_data, "Char_CtxtText", target_path, k)
     save_kfold_npy(_label_split, "Label", target_path, k)
 
 
+def load_data_splits() -> Dict[str, Any]:
+    data_path = os.path.dirname(os.path.abspath(__file__)) + "/../data"
+    with open(data_path + "/data_splits.pkl", "rb") as f:
+        return pickle.load(f)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    # parser.add_argument("--use_glove", type=helper.str2bool, default=True)
     parser.add_argument("--mode", type=str, default="glove")
     parser.add_argument("--num_splits", type=int, default=10)
     args = vars(parser.parse_args())
-    mode = EmbeddingMode.fromStr(args["mode"])
+    mode = EmbeddingMode.from_str(args["mode"])
 
     target_path = os.path.dirname(
         os.path.abspath(__file__)) + "/../data/target"
-    processWordVocab(target_path, mode, args["num_splits"])
-    processCharVocab(target_path, args["num_splits"])
+    process_word_vocab(target_path, mode, args["num_splits"])
+    process_char_vocab(target_path, args["num_splits"])
